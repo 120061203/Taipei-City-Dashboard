@@ -1,0 +1,4 @@
+{
+  "dockerfile": "Dockerfile",
+  "docker_build_target": "prod"
+}

@@ -38,6 +38,9 @@ FROM nginx:alpine
 # Copy the built files from the builder stage to the nginx server
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Use nginx.conf.template for runtime environment variable substitution (BACKEND_URL)
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+
 EXPOSE 8081
 
 # Use custom entrypoint
