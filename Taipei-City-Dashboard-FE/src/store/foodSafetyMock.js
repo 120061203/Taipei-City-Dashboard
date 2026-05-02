@@ -609,6 +609,7 @@ function buildPoisoningData() {
 		? Math.round(((latest.patients - previous.patients) / previous.patients) * 100)
 		: 0;
 	const topPathogen = [...(latest.pathogens || [])]
+		.filter((pathogen) => !pathogen.x.includes("不明"))
 		.sort((a, b) => b.y - a.y)[0] || { x: "-", y: 0 };
 
 	return {
