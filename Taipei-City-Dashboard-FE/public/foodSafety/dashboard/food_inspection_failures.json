@@ -7927,32 +7927,5 @@
       "result": "不符合規定",
       "reason": "(1)殺蟲劑Acetamiprid 亞滅培2.86ppm(標準：0.01ppm以下)/(2)殺菌劑Carbendazim 貝芬替0.02ppm(標準：0.01ppm以下)/(3)殺蟲劑Chlorfenapyr 克凡派2.01ppm(標準：0.01ppm以下)/(4)殺菌劑Chlorothalonil 四氯異苯腈0.13ppm(標準：0.02ppm以下)/(5)殺蟲劑Chlorpyrifos 陶斯松0.04ppm(標準：0.01ppm以下)/(6)殺蟎劑Cyflumetofen 賽芬蟎1.45ppm(標準：0.01ppm以下)/(7)殺菌劑Cyprodinil 賽普洛0.40ppm(標準：0.01ppm以下)/(8)殺蟲劑Deltamethrin 第滅寧0.66ppm(標準：0.01ppm以下)/(9)殺菌劑Difenoconazole 待克利0.40ppm(標準：0.01ppm以下)/(10)殺蟲劑Diflubenzuron 二福隆1.80ppm(標準：0.01ppm以下)/(11)殺蟲劑Dimethoate 大滅松4.24ppm(標準：不得檢出)/(12)殺菌劑Dimethomorph 達滅芬3.81ppm(標準：0.01ppm以下)/(13)殺蟲劑Dinotefuran 達特南0.02ppm(標準：不得檢出)/(14)殺草劑Diuron 達有龍0.02ppm(標準：不得檢出)/(15)殺蟲劑Flonicamid 氟尼胺0.02ppm(標準：0.01ppm以下)/(16)殺蟲劑Flubendiamide 氟大滅0.19ppm(標準：不得檢出)/(17)殺菌劑Fludioxonil 護汰寧0.61ppm(標準：0.01ppm以下)/(18)殺菌劑Fluopicolide 氟比來0.83ppm(標準：0.01ppm以下)/(19)殺菌劑Flutolanil 福多寧0.32ppm(標準：0.01ppm以下)/(20)殺菌劑Fluxapyroxad 氟克殺0.63ppm(標準：不得檢出)/(21)殺蟲劑Imidacloprid 益達胺0.15ppm(標準：0.01ppm以下)/(22)殺蟲劑Omethoate 歐滅松0.31ppm(標準：不得檢出)/(23)殺草劑Pendimethalin 施得圃0.02ppm(標準：0.01ppm以下)/(24)殺菌劑Procymidone 撲滅寧0.02ppm(標準：0.01ppm以下) /(25)殺菌劑Propamocarb hydrochloride 普拔克1.08ppm(標準：0.01ppm以下)/(26)殺菌劑Pyraclostrobin 百克敏5.55ppm(標準：0.01ppm以下)/(27)殺蟲劑Pyriproxyfen 百利普芬0.08ppm(標準：0.01ppm以下)/(28)殺蟎劑Spirotetramat 賜派滅0.79ppm(標準：不得檢出)"
     }
-  ],
-  "series": [
-    {
-      "name": "違規類別件數",
-      "data": [
-        {
-          "x": "小葉菜類",
-          "y": 129
-        },
-        {
-          "x": "根莖菜類",
-          "y": 44
-        },
-        {
-          "x": "大漿果類",
-          "y": 31
-        },
-        {
-          "x": "香辛植物及其他草木本植物",
-          "y": 30
-        },
-        {
-          "x": "果菜類",
-          "y": 28
-        }
-      ]
-    }
   ]
 }

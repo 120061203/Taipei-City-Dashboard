@@ -22,6 +22,7 @@ import argparse
 import csv
 import json
 import re
+import ssl
 import subprocess
 import sys
 import urllib.error
@@ -258,7 +259,10 @@ def download_url(url: str, path: Path) -> None:
             "User-Agent": "Taipei-City-Dashboard food safety ETL/1.0",
         },
     )
-    with urllib.request.urlopen(request, timeout=60) as response:
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    with urllib.request.urlopen(request, timeout=60, context=ctx) as response:
         path.write_bytes(response.read())
 
 
