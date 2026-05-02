@@ -56,11 +56,17 @@ const parsedLabels = computed(() => {
 const sum = computed(() => {
 	return Math.round(parsedSeries.value.reduce((a, b) => a + b) * 100) / 100;
 });
+const chartHeight = computed(() => {
+	if (props.chart_config?.height) {
+		return `${props.chart_config.height}px`;
+	}
+	return "100%";
+});
 
 // chartOptions needs to be in the bottom since it uses computed data
 const chartOptions = ref({
 	chart: {
-		offsetY: 10,
+		offsetY: props.chart_config?.donutOffsetY ?? 10,
 	},
 	colors:
 		props.series.length >= steps.value
@@ -82,10 +88,10 @@ const chartOptions = ref({
 	plotOptions: {
 		pie: {
 			dataLabels: {
-				offset: 15,
+				offset: props.chart_config?.donutDataLabelOffset ?? 15,
 			},
 			donut: {
-				size: "77.5%",
+				size: props.chart_config?.donutSize || "77.5%",
 			},
 		},
 	},
@@ -163,6 +169,7 @@ function handleDataSelection(_e, _chartContext, config) {
   >
     <VueApexCharts
       width="100%"
+      :height="chartHeight"
       type="donut"
       :options="chartOptions"
       :series="parsedSeries"
@@ -183,7 +190,7 @@ function handleDataSelection(_e, _chartContext, config) {
 	justify-content: center;
 	align-items: center;
 	position: relative;
-	overflow-y: visible;
+	overflow: hidden;
 
 	&-title {
 		display: flex;
