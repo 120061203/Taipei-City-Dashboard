@@ -118,7 +118,15 @@ CREATE TABLE IF NOT EXISTS food_check_work (
 );
 TRUNCATE TABLE food_check_work RESTART IDENTITY;
 
-CREATE TABLE IF NOT EXISTS district_food_risk (x_axis TEXT, data NUMERIC(6,2));
+CREATE TABLE IF NOT EXISTS district_food_risk (
+    x_axis TEXT PRIMARY KEY,
+    data NUMERIC(6,2)
+);
+ALTER TABLE district_food_risk ADD COLUMN IF NOT EXISTS inspection_failure_count INTEGER;
+ALTER TABLE district_food_risk ADD COLUMN IF NOT EXISTS graded_business_count INTEGER;
+ALTER TABLE district_food_risk ADD COLUMN IF NOT EXISTS excellent_grade_count INTEGER;
+ALTER TABLE district_food_risk ADD COLUMN IF NOT EXISTS excellent_grade_rate NUMERIC(6,2);
+ALTER TABLE district_food_risk ADD COLUMN IF NOT EXISTS haccp_business_count INTEGER;
 TRUNCATE TABLE district_food_risk;
 
 -- Drop legacy tables from earlier ETL versions

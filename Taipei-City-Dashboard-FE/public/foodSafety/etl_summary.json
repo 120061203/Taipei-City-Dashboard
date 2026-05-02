@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-02T10:10:43.478713+00:00",
-  "raw_dir": "/Users/robert.chen/Taipei-City-Dashboard/Taipei-City-Dashboard-FE/public/foodSafety/raw",
-  "output_dir": "/Users/robert.chen/Taipei-City-Dashboard/Taipei-City-Dashboard-FE/public/foodSafety",
+  "generated_at": "2026-05-02T12:13:12.345594+00:00",
+  "raw_dir": "/Users/billy.chen/Desktop/Taipei-City-Dashboard/Taipei-City-Dashboard-FE/public/foodSafety/raw",
+  "output_dir": "/Users/billy.chen/Desktop/Taipei-City-Dashboard/Taipei-City-Dashboard-FE/public/foodSafety",
   "download_mode": "skipped",
   "downloads": [],
   "datasets": [
@@ -117,10 +117,9 @@
       "normalized_rows": 34
     }
   ],
-  "dashboard_files": [
-    "dashboard/food_inspection_failures.json",
-    "dashboard/food_grade_rank.json",
-    "dashboard/market_inspection_pass_rate.json",
-    "dashboard/district_food_risk.json"
+  "db_components": [
+    "food_inspection_failures",
+    "food_grade_rank",
+    "district_food_risk"
   ]
 }

@@ -8,12 +8,11 @@ and optionally loads the results into the Dashboard PostgreSQL databases.
 Outputs:
 - public/foodSafety/raw/*: downloaded source files
 - public/foodSafety/normalized/*.json: cleaned records by dataset
-- public/foodSafety/dashboard/*.json: chart-ready aggregates
 - public/foodSafety/catalog_inventory.json: dataset availability inventory
 
 DB load (default on, skip with --skip-db):
-- postgres-data: creates/replaces 5 chart data tables
-- postgres-manager: registers 5 components + '食品安全' dashboard
+- postgres-data: creates/replaces normalized food-safety tables
+- postgres-manager: registers food-safety components + '食安守護' dashboard
 """
 
 from __future__ import annotations
@@ -84,7 +83,7 @@ FOOD_SAFETY_TARGETS = [
         "city": "taipei",
         "dataset_id": "09a917a0-0fb5-47e1-957c-5f1268fba517",
         "name": "臺北市衛生局食品抽驗不合格清冊",
-        "agency": "衛生局",
+        "agency": "臺北市政府衛生局",
         "update_frequency": "每1年",
         "role": "食品抽驗不合格紀錄",
         "dataset_page_url": f"{TAIPEI_OPEN_DATA_BASE_URL}/dataset/detail?id=09a917a0-0fb5-47e1-957c-5f1268fba517",
@@ -105,7 +104,7 @@ FOOD_SAFETY_TARGETS = [
         "city": "taipei",
         "dataset_id": "59579c19-a561-4564-8c0f-545bfb32c0f6",
         "name": "臺北市通過餐飲衛生管理分級評核業者",
-        "agency": "衛生局",
+        "agency": "臺北市政府衛生局",
         "update_frequency": "每1年",
         "role": "餐飲衛生分級評核業者",
         "dataset_page_url": f"{TAIPEI_OPEN_DATA_BASE_URL}/dataset/detail?id=59579c19-a561-4564-8c0f-545bfb32c0f6",
@@ -120,7 +119,7 @@ FOOD_SAFETY_TARGETS = [
         "city": "taipei",
         "dataset_id": "bb665f7f-085c-40f9-9b9a-844e46da9c65",
         "name": "臺北市HACCP稽查",
-        "agency": "衛生局",
+        "agency": "臺北市政府衛生局",
         "update_frequency": "不定期更新",
         "role": "HACCP 稽查業者",
         "dataset_page_url": f"{TAIPEI_OPEN_DATA_BASE_URL}/dataset/detail?id=bb665f7f-085c-40f9-9b9a-844e46da9c65",
@@ -135,7 +134,7 @@ FOOD_SAFETY_TARGETS = [
         "city": "taipei",
         "dataset_id": "ad63197e-217c-472b-a63f-94b0d29d0e7a",
         "name": "臺北市批發市場質譜化學快檢不合格統計資料",
-        "agency": "產業局市場處",
+        "agency": "臺北市政府產業發展局市場處",
         "update_frequency": "每1月",
         "role": "批發市場質譜化學快檢不合格統計",
         "dataset_page_url": f"{TAIPEI_OPEN_DATA_BASE_URL}/dataset/detail?id=ad63197e-217c-472b-a63f-94b0d29d0e7a",
@@ -150,7 +149,7 @@ FOOD_SAFETY_TARGETS = [
         "city": "taipei",
         "dataset_id": "8ab917b0-1029-4003-b776-f169b4e561f1",
         "name": "臺北市政府標章農產品抽檢清冊",
-        "agency": "產業局",
+        "agency": "臺北市政府產業發展局",
         "update_frequency": "不定期更新",
         "role": "標章農產品抽檢合格率",
         "dataset_page_url": f"{TAIPEI_OPEN_DATA_BASE_URL}/dataset/detail?id=8ab917b0-1029-4003-b776-f169b4e561f1",
@@ -165,7 +164,7 @@ FOOD_SAFETY_TARGETS = [
         "city": "taipei",
         "dataset_id": "7d50657f-b35b-496e-b83f-5713893b9a9e",
         "name": "臺北市食品衛生管理工作",
-        "agency": "主計處",
+        "agency": "臺北市政府主計處",
         "update_frequency": "每1年",
         "role": "食品衛生稽查與不合格改善",
         "dataset_page_url": f"{TAIPEI_OPEN_DATA_BASE_URL}/dataset/detail?id=7d50657f-b35b-496e-b83f-5713893b9a9e",
@@ -180,7 +179,7 @@ FOOD_SAFETY_TARGETS = [
         "city": "taipei",
         "dataset_id": "9431f450-57d6-4c23-aca6-0ff50de49f0d",
         "name": "臺北市食品業者登錄數",
-        "agency": "衛生局",
+        "agency": "臺北市政府衛生局",
         "update_frequency": "不定期更新",
         "role": "食品業者登錄數",
         "dataset_page_url": f"{TAIPEI_OPEN_DATA_BASE_URL}/dataset/detail?id=9431f450-57d6-4c23-aca6-0ff50de49f0d",
@@ -195,7 +194,7 @@ FOOD_SAFETY_TARGETS = [
         "city": "taipei",
         "dataset_id": "c3ae074c-f65f-4f69-bf65-2c00a674e870",
         "name": "臺北市食品衛生管理查驗工作",
-        "agency": "主計處",
+        "agency": "臺北市政府主計處",
         "update_frequency": "每1年",
         "role": "食品衛生查驗不符比率",
         "dataset_page_url": f"{TAIPEI_OPEN_DATA_BASE_URL}/dataset/detail?id=c3ae074c-f65f-4f69-bf65-2c00a674e870",
@@ -720,19 +719,15 @@ def build_district_risk_dashboard(
     grade_counter = Counter(row.get("district") for row in grades if row.get("district"))
     excellent_counter = Counter(row.get("district") for row in grades if row.get("grade") == "優" and row.get("district"))
     haccp_counter = Counter(row.get("district") for row in haccp if row.get("district"))
+    max_failure_count = max(failure_counter.values(), default=1)
 
     district_rows = []
     for district in districts:
         graded = grade_counter[district]
         excellent_rate = excellent_counter[district] / graded * 100 if graded else None
-        risk_score = min(
-            100,
-            round(
-                failure_counter[district] * 6
-                + ((100 - excellent_rate) * 0.35 if excellent_rate is not None else 0),
-                2,
-            ),
-        )
+        failure_index = failure_counter[district] / max_failure_count * 75 if max_failure_count else 0
+        grade_gap_index = (100 - excellent_rate) * 0.25 if excellent_rate is not None else 0
+        risk_score = round(min(100, failure_index + grade_gap_index), 2)
         district_rows.append(
             {
                 "district": district,
@@ -872,7 +867,15 @@ def _create_normalized_tables(normalized: dict[str, list[dict[str, Any]]], dashb
 
     # district_food_risk rows are computed — insert dynamically
     for row in sorted(dashboards["district_food_risk"]["by_district"], key=lambda r: -r["risk_score"]):
-        stmts.append(f"INSERT INTO district_food_risk VALUES ({_s(row['district'])}, {row['risk_score']});")
+        stmts.append(
+            "INSERT INTO district_food_risk "
+            "(x_axis, data, inspection_failure_count, graded_business_count, "
+            "excellent_grade_count, excellent_grade_rate, haccp_business_count) "
+            f"VALUES ({_s(row['district'])}, {row['risk_score']}, "
+            f"{row['inspection_failure_count']}, {row['graded_business_count']}, "
+            f"{row['excellent_grade_count']}, {_val(row['excellent_grade_rate'])}, "
+            f"{row['haccp_business_count']});"
+        )
 
     _run_sql(_POSTGRES_DATA_CONTAINER, _DATA_DB, "\n".join(stmts))
 
@@ -899,7 +902,6 @@ def run_etl(
     skip_db: bool = False,
 ) -> dict[str, Any]:
     normalized_dir = output_dir / "normalized"
-    dashboard_dir = output_dir / "dashboard"
 
     download_results = []
     if not skip_download:
@@ -941,13 +943,10 @@ def run_etl(
         ),
     }
 
-    src_data_dir = output_dir.parent.parent / "src" / "store" / "foodSafetyData"
-    src_data_dir.mkdir(parents=True, exist_ok=True)
-    chart_keys = ["food_inspection_failures", "food_grade_rank", "district_food_risk"]
-    for name, data in dashboards.items():
-        write_json(dashboard_dir / f"{name}.json", data)
-        if name in chart_keys:
-            write_json(src_data_dir / f"{name}.json", {"series": data["series"]})
+    legacy_dashboard_dir = output_dir / "dashboard"
+    if legacy_dashboard_dir.exists():
+        for path in legacy_dashboard_dir.glob("*.json"):
+            path.unlink()
 
     if not skip_db:
         load_to_db(normalized, dashboards)
@@ -967,7 +966,11 @@ def run_etl(
             }
             for target in FOOD_SAFETY_TARGETS
         ],
-        "dashboard_files": [f"dashboard/{name}.json" for name in dashboards],
+        "db_components": [
+            "food_inspection_failures",
+            "food_grade_rank",
+            "district_food_risk",
+        ],
     }
     write_json(output_dir / "etl_summary.json", run_summary)
     return run_summary
