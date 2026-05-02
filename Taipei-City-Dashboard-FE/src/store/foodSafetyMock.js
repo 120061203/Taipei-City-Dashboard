@@ -819,7 +819,7 @@ function buildFoodSafetyComponentsForCity(city) {
 	const poisoningData = buildPoisoningData(city);
 	const riskData = buildRiskData(city);
 
-	return [
+	const components = [
 		withFoodSafetyContext(
 			compMap,
 			city,
@@ -837,14 +837,6 @@ function buildFoodSafetyComponentsForCity(city) {
 			buildRankText(rankData, city),
 		),
 		withFoodSafetyContext(
-			compPoisoning,
-			city,
-			"foodPoisoning",
-			poisoningData,
-			buildPoisoningInsights(poisoningData, city),
-			buildPoisoningText(poisoningData, city),
-		),
-		withFoodSafetyContext(
 			compRisk,
 			city,
 			"districtRisk",
@@ -853,6 +845,21 @@ function buildFoodSafetyComponentsForCity(city) {
 			buildRiskText(riskData, city),
 		),
 	];
+	// 食品中毒事件趨勢資料來源為臺北市主計處，僅涵蓋臺北市
+	// 只放在 metrotaipei 城市下，避免出現城市切換下拉選單
+	if (city === "metrotaipei") {
+		components.push(
+			withFoodSafetyContext(
+				compPoisoning,
+				city,
+				"foodPoisoning",
+				poisoningData,
+				buildPoisoningInsights(poisoningData, city),
+				buildPoisoningText(poisoningData, city),
+			),
+		);
+	}
+	return components;
 }
 
 export function buildFoodSafetyComponents() {
