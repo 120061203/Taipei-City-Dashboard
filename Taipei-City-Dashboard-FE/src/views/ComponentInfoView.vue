@@ -99,7 +99,9 @@ onMounted(() => {
             :config="item"
             :style="{ height: '350px', width: '400px' }"
             :active-city="item.city"
-            :city-tag="contentStore.cityManager.getTagList(item.city)"
+            :city-tag="item.city_tag_override
+              ? contentStore.cityManager.getCities(item.city_tag_override)
+              : contentStore.cityManager.getTagList(item.city)"
             :add-btn="
               !contentStore.editDashboard.components
                 .map((item) => item.id)

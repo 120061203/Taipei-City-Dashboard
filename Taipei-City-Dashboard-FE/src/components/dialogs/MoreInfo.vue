@@ -20,8 +20,6 @@ function getLinkTag(link, index) {
 		return `資料集 - ${index + 1} (data.taipei)`;
 	} else if (link.includes("data.ntpc")) {
 		return `資料集 - ${index + 1} (data.ntpc)`;
-	} else if (link.includes("fda.gov.tw")) {
-		return `資料集 - ${index + 1} (食藥署)`;
 	} else if (link.includes("tuic.gov.taipei")) {
 		return `大數據中心專案網頁`;
 	} else if (link.includes("github.com")) {
@@ -41,7 +39,9 @@ function getLinkTag(link, index) {
       <DashboardComponent
         :config="dialogStore.moreInfoContent"
         :active-city="dialogStore.moreInfoContent.city"
-        :city-tag="contentStore.cityManager.getTagList(dialogStore.moreInfoContent.city)"
+        :city-tag="dialogStore.moreInfoContent.city_tag_override
+          ? contentStore.cityManager.getCities(dialogStore.moreInfoContent.city_tag_override)
+          : contentStore.cityManager.getTagList(dialogStore.moreInfoContent.city)"
         mode="large"
       />
       <div class="moreinfo-info">
@@ -84,8 +84,8 @@ function getLinkTag(link, index) {
             <h3>協作者</h3>
             <div class="moreinfo-info-contributors">
               <div
-                v-for="contributor in dialogStore.moreInfoContent.contributors
-                  .filter((id) => contentStore.contributors[id])"
+                v-for="contributor in dialogStore
+                  .moreInfoContent.contributors"
                 :key="contributor"
               >
                 <a

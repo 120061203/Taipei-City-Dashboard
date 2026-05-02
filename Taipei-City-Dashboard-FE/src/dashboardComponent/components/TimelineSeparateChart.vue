@@ -149,10 +149,11 @@ watch(
   <div v-if="activeChart === 'TimelineSeparateChart'">
     <VueApexCharts
       width="100%"
-      :height="chart_config.height ? `${chart_config.height}px` : '260px'"
+      height="260px"
       type="line"
       :options="chartOptions"
       :series="localSeries"
     />
   </div>
 </template>
+

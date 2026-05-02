@@ -83,9 +83,11 @@ function handleMoreInfo(item) {
       :info-btn="true"
       :active-city="item.city"
       :select-btn="true"
-      :select-btn-disabled="contentStore.cityManager.getSelectList(contentStore.currentDashboard?.city).length === 1"
+      :select-btn-disabled="item.city_select_disabled || contentStore.cityManager.getSelectList(contentStore.currentDashboard?.city).length === 1"
       :select-btn-list="contentStore.cityManager.getSelectList(contentStore.currentDashboard?.city)"
-      :city-tag="contentStore.cityManager.getTagList(contentStore.currentDashboard?.city)"
+      :city-tag="item.city_tag_override
+        ? contentStore.cityManager.getCities(item.city_tag_override)
+        : contentStore.cityManager.getTagList(contentStore.currentDashboard?.city)"
       :favorite-btn="authStore.token ? true : false"
       :is-favorite="contentStore.favorites?.components.includes(item.id)"
       @favorite="
@@ -129,14 +131,16 @@ function handleMoreInfo(item) {
       :info-btn="true"
       :active-city="item.city"
       :select-btn="true"
-      :select-btn-disabled="contentStore.cityManager.getSelectList(contentStore.currentDashboard?.city).length === 1 || contentStore.currentDashboardExcluded.components.filter((data) => data.index === item.index).length === 0"
+      :select-btn-disabled="item.city_select_disabled || contentStore.cityManager.getSelectList(contentStore.currentDashboard?.city).length === 1 || contentStore.currentDashboardExcluded.components.filter((data) => data.index === item.index).length === 0"
       :select-btn-list="contentStore.currentDashboard?.city
         ? contentStore.cityManager.getSelectList(contentStore.currentDashboard?.city)
         : contentStore.cityManager.getCities(contentStore.cityManager.activeCities)
       "
-      :city-tag="contentStore.currentDashboard?.city
-        ? contentStore.cityManager.getTagList(contentStore.currentDashboard?.city)
-        : contentStore.cityManager.getTagList(item.city)
+      :city-tag="item.city_tag_override
+        ? contentStore.cityManager.getCities(item.city_tag_override)
+        : contentStore.currentDashboard?.city
+          ? contentStore.cityManager.getTagList(contentStore.currentDashboard?.city)
+          : contentStore.cityManager.getTagList(item.city)
       "
       :delete-btn="
         contentStore.personalDashboards

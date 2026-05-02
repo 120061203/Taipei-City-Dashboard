@@ -28,7 +28,7 @@ import BarChartWithGoal from "./components/BarChartWithGoal.vue";
 import IconPercentChart from "./components/IconPercentChart.vue";
 import IndicatorChart from "./components/IndicatorChart.vue";
 import TextUnitChart from "./components/TextUnitChart.vue";
-import FoodPoisoningYearlyChart from "./components/FoodPoisoningYearlyChart.vue";
+import FoodRiskDrilldownChart from "./components/FoodRiskDrilldownChart.vue";
 
 import MapLegendSvg from "./assets/chart/MapLegend.svg";
 import DistrictChartSvg from "./assets/chart/DistrictChart.svg";
@@ -223,8 +223,8 @@ function returnChartComponent(name, svg) {
 		return svg ? IndicatorChartSvg : IndicatorChart;
 	case "TextUnitChart":
 		return svg ? TextUnitChartSvg : TextUnitChart;
-	case "FoodPoisoningYearlyChart":
-		return svg ? ColumnChartSvg : FoodPoisoningYearlyChart;
+	case "FoodRiskDrilldownChart":
+		return svg ? BarChartSvg : FoodRiskDrilldownChart;
 	default:
 		return svg ? MapLegendSvg : MapLegend;
 	}
@@ -242,7 +242,6 @@ function returnChartComponent(name, svg) {
         half: mode === 'half',
         large: mode === 'large',
         preview: mode === 'preview',
-        'dashboardcomponent-compact': config.insights?.length > 0,
       },
     ]"
     :style="style"
@@ -273,20 +272,13 @@ function returnChartComponent(name, svg) {
         <p v-if="mode === 'preview'">
           {{ props.config.short_desc }}
         </p>
-        <div
-          v-if="!mode.includes('map') || toggleOn"
-          class="dashboardcomponent-meta"
-        >
+        <div v-if="!mode.includes('map') || toggleOn">
           <h4 v-if="dataTime === '維護修復中'">
             {{ `${config.source} | ` }}<span>warning</span>
             <h4>{{ `${dataTime}` }}</h4>
             <span>warning</span>
           </h4>
-          <h4
-            v-else
-            class="dashboardcomponent-source"
-            :title="`${config.source} | ${dataTime}`"
-          >
+          <h4 v-else>
             {{ `${config.source} | ${dataTime}` }}
           </h4>
           <div
@@ -424,26 +416,11 @@ function returnChartComponent(name, svg) {
       v-else-if="config.chart_data && (toggleOn || !mode.includes('map'))"
       :class="{
         'dashboardcomponent-chart': true,
-        'has-insights': config.insights?.length > 0,
         'half-chart': mode === 'half',
         'mapopen-chart': mode === 'map',
         'halfmapopen-chart': mode === 'halfmap',
       }"
     >
-      <div
-        v-if="config.insights?.length > 0"
-        class="dashboardcomponent-insights"
-      >
-        <div
-          v-for="insight in config.insights"
-          :key="`${config.index}-${config.city}-${insight.label}`"
-          class="dashboardcomponent-insights-item"
-        >
-          <span>{{ insight.label }}</span>
-          <strong>{{ insight.value }}</strong>
-          <small>{{ insight.helper }}</small>
-        </div>
-      </div>
       <component
         :is="returnChartComponent(item)"
         v-for="item in config.chart_config.types"
@@ -641,40 +618,6 @@ button:hover {
 			}
 		}
 
-		.dashboardcomponent-meta {
-			display: grid !important;
-			grid-template-columns: minmax(0, 1fr) auto;
-			gap: 6px;
-			align-items: start;
-			width: 100%;
-			max-width: 100%;
-		}
-
-		.dashboardcomponent-source {
-			min-width: 0;
-			max-width: 100%;
-			display: -webkit-box;
-			-webkit-line-clamp: 2;
-			-webkit-box-orient: vertical;
-			line-height: 1.25;
-			overflow: hidden;
-		}
-
-		.city-tag-container {
-			display: flex !important;
-			flex-wrap: wrap;
-			justify-content: flex-end;
-			gap: 3px;
-			min-width: 44px;
-			max-width: 76px;
-			overflow: visible;
-
-			.componenttag {
-				flex: 0 0 auto;
-				margin-left: 0;
-			}
-		}
-
 		p {
 			color: var(--color-normal-text);
 			font-size: var(--font-s);
@@ -757,7 +700,7 @@ button:hover {
 		top: 4.2rem;
 		left: 0;
 		z-index: 8;
-		padding: 6px 0;
+		padding: 8px 0;
 
 		&-group {
 			display: flex;
@@ -810,108 +753,6 @@ button:hover {
 
 		p {
 			color: var(--color-border);
-		}
-	}
-
-	&-insights {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 5px;
-		margin: 0 0 4px;
-		overflow: visible;
-
-		&-item {
-			min-width: 0;
-			padding: 5px 8px;
-			border: 1px solid rgba(136, 135, 135, 0.28);
-			border-radius: 5px;
-			background: rgba(255, 255, 255, 0.035);
-
-			span,
-			strong,
-			small {
-				display: block;
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
-			}
-
-			span {
-				color: var(--color-complement-text);
-				font-size: 10px;
-				line-height: 1.15;
-			}
-
-			strong {
-				margin: 1px 0;
-				color: var(--color-normal-text);
-				font-size: calc(var(--font-s) * 0.95);
-				line-height: 1.15;
-			}
-
-			small {
-				color: var(--color-complement-text);
-				font-size: 10px;
-				line-height: 1.15;
-				opacity: 0.86;
-			}
-		}
-	}
-
-	&.dashboardcomponent-compact {
-		.dashboardcomponent-header h3 {
-			line-height: 1.2;
-		}
-
-		.dashboardcomponent-source {
-			-webkit-line-clamp: 1;
-		}
-
-		.dashboardcomponent-control {
-			padding: 3px 0;
-
-			&-group-button {
-				padding: 3px 4px;
-				font-size: 11px;
-			}
-		}
-
-		.dashboardcomponent-chart {
-			display: flex;
-			flex-direction: column;
-			flex: 1 1 auto;
-			min-height: 0;
-			height: auto;
-			padding-top: 0;
-			overflow: hidden;
-
-			:deep(.barchart-wrap),
-			:deep(.donutchart),
-			:deep(.districtchart),
-			:deep(.fpyc) {
-				flex: 1 1 auto;
-				min-height: 0;
-				width: 100%;
-			}
-		}
-
-		.dashboardcomponent-insights {
-			gap: 4px;
-			flex: 0 0 auto;
-			margin-bottom: 2px;
-
-			&-item {
-				padding: 3px 7px;
-
-				span,
-				small {
-					font-size: 9px;
-				}
-
-				strong {
-					font-size: 12px;
-				}
-			}
 		}
 	}
 

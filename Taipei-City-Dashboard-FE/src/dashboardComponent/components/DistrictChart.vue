@@ -1,7 +1,7 @@
 <!-- Developed by Taipei Urban Intelligence Center 2023-2024-->
 
 <script setup>
-import { computed, ref, nextTick, onMounted, watch } from "vue";
+import { computed, ref, nextTick } from "vue";
 import { districtCoordinates } from "../utilities/districtCoordinates";
 
 const props = defineProps([
@@ -13,63 +13,6 @@ const props = defineProps([
 	"map_filter",
 	"map_filter_on",
 ]);
-
-// Team 20: 風險排序動畫 — 從風險最高的行政區先出現 + 高風險脈動效果
-const districtRiskRank = computed(() => {
-	if (!props.series || props.series.length === 0) return {};
-	const data = props.series[0].data || [];
-	const sorted = [...data].sort((a, b) => (b.y || 0) - (a.y || 0));
-	const ranks = {};
-	sorted.forEach((item, idx) => {
-		ranks[item.x] = { rank: idx + 1, value: item.y };
-	});
-	return ranks;
-});
-
-// 應用風險排序到 SVG 路徑：依風險高低設定動畫延遲，並把 top 3 加上脈動 class
-function applyRiskAnimationOrder() {
-	nextTick(() => {
-		const root = document.querySelector(".districtchart");
-		if (!root) return;
-		const ranks = districtRiskRank.value;
-		const total = Object.keys(ranks).length;
-		if (total === 0) return;
-
-		// 計算每個 rank 的進場延遲：rank 1 (最高) 先 → 最後 rank 最後
-		root.querySelectorAll("path[data-name]").forEach((p) => {
-			const {name} = p.dataset;
-			const info = ranks[name];
-			// 移除既有 top class
-			p.classList.remove("risk-top1", "risk-top2", "risk-top3");
-			if (!info) {
-				// 沒資料的行政區延遲到最後出現
-				p.style.animationDelay = `${total * 0.04 + 0.3}s`;
-				return;
-			}
-			// 高風險先出，低風險後出
-			p.style.animationDelay = `${(info.rank - 1) * 0.06}s`;
-			// 動畫時間稍微加長讓進場更明顯
-			p.style.animationDuration = "0.4s";
-			// Top 3 加脈動 class
-			if (info.rank === 1) p.classList.add("risk-top1");
-			else if (info.rank === 2) p.classList.add("risk-top2");
-			else if (info.rank === 3) p.classList.add("risk-top3");
-		});
-	});
-}
-
-onMounted(applyRiskAnimationOrder);
-watch(() => props.series, applyRiskAnimationOrder, { deep: true });
-watch(() => props.activeCity, applyRiskAnimationOrder);
-
-const isCompact = computed(() => props.chart_config?.compact === true);
-const chartStyle = computed(() => {
-	if (!props.chart_config?.height) return {};
-	return {
-		height: `${props.chart_config.height}px`,
-		maxHeight: `${props.chart_config.height}px`,
-	};
-});
 
 const emits = defineEmits([
 	"filterByParam",
@@ -338,8 +281,6 @@ function handleDataSelection(index) {
   <div
     v-if="activeChart === 'DistrictChart'"
     class="districtchart"
-    :class="{ 'districtchart-compact': isCompact }"
-    :style="chartStyle"
   >
     <div class="districtchart-title">
       <h5>總合</h5>
@@ -1307,10 +1248,10 @@ function handleDataSelection(index) {
 }
 
 .districtchart {
-	height: 100%;
+	// height: 100%;
 	max-height: 100%;
 	position: relative;
-	overflow: hidden;
+	overflow-y: scroll;
 
 	&-title {
 		display: flex;
@@ -1367,12 +1308,9 @@ function handleDataSelection(index) {
 		height: 100%;
 		display: flex;
 		justify-content: center;
-		align-items: center;
 
 		svg {
 			height: auto;
-			max-height: 100%;
-			max-width: 100%;
 
 			path {
 				transition: transform 0.2s;
@@ -1395,29 +1333,6 @@ function handleDataSelection(index) {
 			pointer-events: none;
 			min-width: min-content;
 			white-space: nowrap;
-		}
-	}
-
-	&.districtchart-compact {
-		.districtchart-title {
-			transform: scale(0.82);
-			transform-origin: top left;
-			margin-top: 0;
-		}
-
-		.districtchart-chart {
-			box-sizing: border-box;
-			padding-left: 4.9rem;
-		}
-
-		.districtchart-chart-taipei {
-			width: 58%;
-			transform: translateX(0);
-		}
-
-		.districtchart-chart-metrotaipei {
-			width: 96%;
-			transform: translateX(8px);
 		}
 	}
 }
@@ -1445,53 +1360,5 @@ function handleDataSelection(index) {
 		animation-fill-mode: forwards;
 	}
 }
-
-// Team 20: 風險最高的 3 個行政區 — 進場後持續脈動 + 描邊強化
-@keyframes riskPulse {
-	0%, 100% {
-		filter: drop-shadow(0 0 1px currentColor);
-		stroke-width: 0.8;
-	}
-	50% {
-		filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 10px currentColor);
-		stroke-width: 1.6;
-	}
-}
-
-@keyframes riskBlink {
-	0%, 100% {
-		fill-opacity: 0.85;
-	}
-	50% {
-		fill-opacity: 1;
-	}
-}
-
-.risk-top1,
-.risk-top2,
-.risk-top3 {
-	stroke: #fff;
-	stroke-opacity: 0.85;
-	transition: transform 0.2s;
-}
-
-.risk-top1 {
-	animation: ease-in 0.4s linear forwards,
-		riskPulse 1.6s ease-in-out infinite 1.2s,
-		riskBlink 1.6s ease-in-out infinite 1.2s;
-	stroke: #ff5252;
-	color: #ff5252;
-}
-.risk-top2 {
-	animation: ease-in 0.4s linear forwards,
-		riskPulse 1.8s ease-in-out infinite 1.4s;
-	stroke: #ff8c42;
-	color: #ff8c42;
-}
-.risk-top3 {
-	animation: ease-in 0.4s linear forwards,
-		riskPulse 2s ease-in-out infinite 1.6s;
-	stroke: #ffc857;
-	color: #ffc857;
-}
 </style>
+

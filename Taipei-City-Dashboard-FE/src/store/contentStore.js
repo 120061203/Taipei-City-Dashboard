@@ -16,13 +16,6 @@ import { useDialogStore } from "./dialogStore";
 import { useAuthStore } from "./authStore";
 import { getComponentDataTimeframe } from "../assets/utilityFunctions/dataTimeframe";
 import { CityManager } from "../dashboardComponent/utilities/cityManager";
-// Team 20 hackathon: 食安守護 mock dashboard injection
-import {
-	FOOD_SAFETY_DASHBOARD_INDEX,
-	FOOD_SAFETY_CITY,
-	foodSafetyDashboard,
-	buildFoodSafetyComponents,
-} from "./foodSafetyMock";
 
 export const useContentStore = defineStore("content", {
 	state: () => ({
@@ -165,9 +158,6 @@ export const useContentStore = defineStore("content", {
 				}
 			});
 
-			// Team 20: 注入「食安守護」mock dashboard 到 metrotaipei 列表
-			this.injectFoodSafetyDashboard();
-
 			if (onlyDashboard) return;
 
 			// 2-1. If the current path is /dashboard or /mapview, redirect to the first dashboard
@@ -270,20 +260,6 @@ export const useContentStore = defineStore("content", {
 				);
 				this.cityDashboard.components = response.data.data || [];
 
-				// Team 20: inject mock 食品中毒事件趨勢 (no DB backing) into food safety dashboard
-				if (this.currentDashboard.index === FOOD_SAFETY_DASHBOARD_INDEX) {
-					const poisoning = buildFoodSafetyComponents().find(
-						(c) => c.index === "foodborne_illness_trend" && c.city === FOOD_SAFETY_CITY,
-					);
-					if (poisoning) {
-						const gradeIdx = this.cityDashboard.components.findIndex(
-							(c) => c.index === "food_grade_rank",
-						);
-						const pos = gradeIdx >= 0 ? gradeIdx + 1 : this.cityDashboard.components.length;
-						this.cityDashboard.components.splice(pos, 0, JSON.parse(JSON.stringify(poisoning)));
-					}
-				}
-
 				this.filterCurrentDashboardContent();
 			} catch (error) {
 				console.error("Error getting dashboard index data:", error);
@@ -291,21 +267,6 @@ export const useContentStore = defineStore("content", {
 
 			// Get the dashboard components data
 			this.setCurrentDashboardAllChartData();
-		},
-		// Team 20: 注入食安守護 mock dashboard 到 metrotaipei 列表
-		injectFoodSafetyDashboard() {
-			const list = this.dashboards.get(FOOD_SAFETY_CITY) || [];
-			// 避免重複注入
-			if (list.some((d) => d.index === FOOD_SAFETY_DASHBOARD_INDEX)) {
-				return;
-			}
-			// 把食安守護插在「圖資資訊」(map-layers) 之前，這樣它在側邊欄會排在主要分類中
-			const mapLayersIndex = list.findIndex((d) =>
-				d.index?.includes("map-layers"),
-			);
-			const insertAt = mapLayersIndex === -1 ? list.length : mapLayersIndex;
-			list.splice(insertAt, 0, { ...foodSafetyDashboard });
-			this.dashboards.set(FOOD_SAFETY_CITY, list);
 		},
 		// 4. Call an API for each component to get its chart data and store it
 		// Will call an additional API if the component has history data
@@ -318,8 +279,6 @@ export const useContentStore = defineStore("content", {
 					index++
 				) {
 					const component = this.cityDashboard.components[index];
-					// skip mock-only components that have no DB backing
-					if (component.index === "foodborne_illness_trend") continue;
 					try {
 						// 4-2. Get chart data
 						const response = await http.get(

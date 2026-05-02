@@ -19,6 +19,7 @@ export const chartTypes = {
 	IndicatorChart: "指標圖",
 	MapLegend: "地圖圖例",
 	TextUnitChart: "文字單位圖",
+	FoodRiskDrilldownChart: "食材風險圖",
 };
 
 export const chartsPerDataType = {
@@ -31,6 +32,7 @@ export const chartsPerDataType = {
 		"RadarChart",
 		"PolarAreaChart",
 		"MetroChart",
+		"FoodRiskDrilldownChart",
 	],
 	three_d: [
 		"ColumnChart",
