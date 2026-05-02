@@ -16,6 +16,13 @@ import { useDialogStore } from "./dialogStore";
 import { useAuthStore } from "./authStore";
 import { getComponentDataTimeframe } from "../assets/utilityFunctions/dataTimeframe";
 import { CityManager } from "../dashboardComponent/utilities/cityManager";
+// Team 20 hackathon: 食安守護 mock dashboard injection
+import {
+	FOOD_SAFETY_DASHBOARD_INDEX,
+	FOOD_SAFETY_CITY,
+	foodSafetyDashboard,
+	foodSafetyComponents,
+} from "./foodSafetyMock";
 
 export const useContentStore = defineStore("content", {
 	state: () => ({
@@ -158,6 +165,9 @@ export const useContentStore = defineStore("content", {
 				}
 			});
 
+			// Team 20: 注入「食安守護」mock dashboard 到 metrotaipei 列表
+			this.injectFoodSafetyDashboard();
+
 			if (onlyDashboard) return;
 
 			// 2-1. If the current path is /dashboard or /mapview, redirect to the first dashboard
@@ -252,6 +262,16 @@ export const useContentStore = defineStore("content", {
 			this.currentDashboard.name = currentDashboardInfo.name;
 			this.currentDashboard.icon = currentDashboardInfo.icon;
 
+			// Team 20: 食安守護 mock dashboard 短路 - 直接用本地 mock 資料
+			if (this.currentDashboard.index === FOOD_SAFETY_DASHBOARD_INDEX) {
+				this.cityDashboard.components = JSON.parse(
+					JSON.stringify(foodSafetyComponents),
+				);
+				this.filterCurrentDashboardContent();
+				// chart_data 已內建在 mock 中，不需要再呼叫 API
+				return;
+			}
+
 			// Get the dashboard index data
 			try {
 				// 針對目前index 取得不分city的資料
@@ -266,6 +286,21 @@ export const useContentStore = defineStore("content", {
 
 			// Get the dashboard components data
 			this.setCurrentDashboardAllChartData();
+		},
+		// Team 20: 注入食安守護 mock dashboard 到 metrotaipei 列表
+		injectFoodSafetyDashboard() {
+			const list = this.dashboards.get(FOOD_SAFETY_CITY) || [];
+			// 避免重複注入
+			if (list.some((d) => d.index === FOOD_SAFETY_DASHBOARD_INDEX)) {
+				return;
+			}
+			// 把食安守護插在「圖資資訊」(map-layers) 之前，這樣它在側邊欄會排在主要分類中
+			const mapLayersIndex = list.findIndex((d) =>
+				d.index?.includes("map-layers"),
+			);
+			const insertAt = mapLayersIndex === -1 ? list.length : mapLayersIndex;
+			list.splice(insertAt, 0, { ...foodSafetyDashboard });
+			this.dashboards.set(FOOD_SAFETY_CITY, list);
 		},
 		// 4. Call an API for each component to get its chart data and store it
 		// Will call an additional API if the component has history data
