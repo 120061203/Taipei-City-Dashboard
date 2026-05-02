@@ -21,7 +21,7 @@ import {
 	FOOD_SAFETY_DASHBOARD_INDEX,
 	FOOD_SAFETY_CITY,
 	foodSafetyDashboard,
-	foodSafetyComponents,
+	buildFoodSafetyComponents,
 } from "./foodSafetyMock";
 
 export const useContentStore = defineStore("content", {
@@ -265,7 +265,7 @@ export const useContentStore = defineStore("content", {
 			// Team 20: 食安守護 mock dashboard 短路 - 直接用本地 mock 資料
 			if (this.currentDashboard.index === FOOD_SAFETY_DASHBOARD_INDEX) {
 				this.cityDashboard.components = JSON.parse(
-					JSON.stringify(foodSafetyComponents),
+					JSON.stringify(buildFoodSafetyComponents()),
 				);
 				this.filterCurrentDashboardContent();
 				// chart_data 已內建在 mock 中，不需要再呼叫 API
@@ -901,6 +901,29 @@ export const useContentStore = defineStore("content", {
 			const dialogStore = useDialogStore();
 			if (Object.keys(this.contributors).length === 0) {
 				this.setContributors();
+			}
+
+			if (
+				[
+					"food_inspection_failures",
+					"food_grade_rank",
+					"foodborne_illness_trend",
+					"district_food_risk",
+				].includes(index)
+			) {
+				const mockComponents = buildFoodSafetyComponents().filter(
+					(component) =>
+						component.index === index &&
+						(!city || component.city === city),
+				);
+				if (mockComponents.length > 0) {
+					dialogStore.moreInfoContent = JSON.parse(
+						JSON.stringify(mockComponents),
+					);
+					this.loading = false;
+					this.error = false;
+					return;
+				}
 			}
 
 			// 2-1. Get the component config
