@@ -99,12 +99,13 @@ const foodSafetyDataSources = {
 	],
 	foodPoisoning: [
 		{
-			city: "全國",
-			id: "FDA-FOODBORNE-95-114",
-			name: "食藥署民國 95–114 年食品中毒發生狀況年報",
-			agency: "衛生福利部食品藥物管理署",
-			updateFrequency: "每年",
-			url: "https://www.fda.gov.tw/TC/site.aspx?sid=325",
+			city: "臺北市",
+			id: "7d50657f-b35b-496e-b83f-5713893b9a9e",
+			name: "臺北市食品衛生管理工作",
+			agency: "臺北市政府主計處",
+			updateFrequency: "每1年",
+			lastUpdated: "2026-03-15T20:21:00",
+			url: taipeiDatasetPage("7d50657f-b35b-496e-b83f-5713893b9a9e"),
 		},
 	],
 	districtRisk: [
@@ -164,7 +165,7 @@ const sourceSummary = (key, city) => {
 			city === "taipei"
 				? "臺北市餐飲衛生評核"
 				: "雙北餐飲衛生評核",
-		foodPoisoning: `${scope}食藥署年報推估`,
+		foodPoisoning: "臺北市食品衛生管理工作統計",
 		districtRisk:
 			city === "taipei"
 				? "臺北市食品衛生管理"
@@ -682,7 +683,7 @@ const compPoisoning = {
 	history_config: null,
 	source: sourceText(foodSafetyDataSources.foodPoisoning),
 	links: sourceLinks(foodSafetyDataSources.foodPoisoning),
-	contributors: ["mohw"],
+	contributors: ["doit"],
 	update_freq: 1,
 	update_freq_unit: "year",
 	short_desc:
