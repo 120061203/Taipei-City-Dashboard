@@ -37,9 +37,9 @@ _POSTGRES_MANAGER_CONTAINER = "postgres-manager"
 _PG_USER = "postgres"
 _DATA_DB = "dashboard"
 _MANAGER_DB = "dashboardmanager"
-_DASHBOARD_INDEX = "food_safety_taipei"
-_DASHBOARD_NAME = "食品安全"
-_DASHBOARD_ICON = "verified"
+_DASHBOARD_INDEX = "food_safety_metrotpe"
+_DASHBOARD_NAME = "食安守護"
+_DASHBOARD_ICON = "restaurant"
 
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -1009,53 +1009,39 @@ CREATE TABLE district_food_risk (x_axis TEXT, data NUMERIC(6,2));
 def _register_components() -> None:
     components = [
         {
-            "index": "food_inspection_trend",
-            "name": "食品抽驗不合格趨勢",
-            "color": ["#E05C5C", "#F5A623"],
-            "types": ["ColumnChart"],
+            "index": "food_inspection_failures",
+            "name": "食品抽驗不合格地圖",
+            "color": ["#ed5a5a", "#f0883e", "#eac54f", "#5a9cf8", "#7ee787", "#d2a8ff"],
+            "types": ["BarChart", "DonutChart"],
             "unit": "件",
             "query_type": "two_d",
-            "query_chart": "SELECT year::text AS x_axis, COUNT(*)::integer AS data FROM food_inspection_failures WHERE year IS NOT NULL GROUP BY year ORDER BY year",
-            "short_desc": "臺北市食品抽驗不合格件數，依年度統計",
+            "query_chart": "SELECT category AS x_axis, COUNT(*)::integer AS data FROM food_inspection_failures WHERE category IS NOT NULL GROUP BY category ORDER BY data DESC LIMIT 5",
+            "short_desc": "臺北市近期食品抽驗不合格件數，依業者類別統計前五名",
             "long_desc": "資料來源：臺北市衛生局食品抽驗不合格清冊",
             "source": "臺北市衛生局",
             "update_freq": 1,
             "update_freq_unit": "year",
         },
         {
-            "index": "food_inspection_by_district",
-            "name": "行政區食品抽驗不合格",
-            "color": ["#E05C5C"],
-            "types": ["BarChart"],
-            "unit": "件",
-            "query_type": "two_d",
-            "query_chart": "SELECT district AS x_axis, COUNT(*)::integer AS data FROM food_inspection_failures WHERE district IS NOT NULL GROUP BY district ORDER BY data DESC",
-            "short_desc": "臺北市各行政區食品抽驗不合格件數",
-            "long_desc": "資料來源：臺北市衛生局食品抽驗不合格清冊",
-            "source": "臺北市衛生局",
-            "update_freq": 1,
-            "update_freq_unit": "year",
-        },
-        {
-            "index": "food_hygiene_grade",
-            "name": "餐飲衛生分級評核",
-            "color": ["#56B96D", "#F8CF58"],
-            "types": ["BarPercentChart"],
+            "index": "food_grade_rank",
+            "name": "餐飲衛生分級榜",
+            "color": ["#7ee787", "#5a9cf8", "#eac54f"],
+            "types": ["BarChart", "ColumnChart"],
             "unit": "家",
-            "query_type": "three_d",
-            "query_chart": "SELECT district AS x_axis, NULL::text AS icon, grade AS y_axis, COUNT(*)::integer AS data FROM food_hygiene_grade WHERE district IS NOT NULL AND grade IS NOT NULL GROUP BY district, grade ORDER BY district, grade DESC",
-            "short_desc": "臺北市通過餐飲衛生管理分級評核業者，優/良分佈",
-            "long_desc": "資料來源：臺北市衛生局餐飲衛生管理分級評核",
+            "query_type": "two_d",
+            "query_chart": "SELECT district AS x_axis, COUNT(*)::integer AS data FROM food_hygiene_grade WHERE district IS NOT NULL GROUP BY district ORDER BY data DESC LIMIT 5",
+            "short_desc": "臺北市通過餐飲衛生管理分級評核業者，依行政區統計前五名",
+            "long_desc": "資料來源：臺北市衛生局餐飲衛生管理分級評核與HACCP稽查",
             "source": "臺北市衛生局",
             "update_freq": 1,
             "update_freq_unit": "year",
         },
         {
             "index": "district_food_risk",
-            "name": "行政區食品安全風險指數",
-            "color": ["#F05C5C", "#F5A623", "#56B96D"],
-            "types": ["ColumnChart"],
-            "unit": "分",
+            "name": "行政區食安風險指數",
+            "color": ["#ed5a5a"],
+            "types": ["DistrictChart", "BarChart"],
+            "unit": "指數",
             "query_type": "two_d",
             "query_chart": "SELECT x_axis, data FROM district_food_risk ORDER BY data DESC",
             "short_desc": "依不合格件數與衛生分級計算各行政區風險指數（0–100）",
@@ -1064,23 +1050,18 @@ def _register_components() -> None:
             "update_freq": 1,
             "update_freq_unit": "year",
         },
-        {
-            "index": "agri_sampling_pass_rate",
-            "name": "標章農產品抽檢合格率",
-            "color": ["#56B96D"],
-            "types": ["ColumnChart"],
-            "unit": "%",
-            "query_type": "two_d",
-            "query_chart": "SELECT year::text AS x_axis, ROUND(AVG(pass_rate)::numeric, 2) AS data FROM food_agri_label_sampling WHERE year IS NOT NULL AND pass_rate IS NOT NULL GROUP BY year ORDER BY year",
-            "short_desc": "臺北市標章農產品抽驗合格率，依年度統計",
-            "long_desc": "資料來源：臺北市政府標章農產品抽檢清冊",
-            "source": "臺北市產業局",
-            "update_freq": 1,
-            "update_freq_unit": "year",
-        },
     ]
 
     stmts: list[str] = []
+
+    # Clean up old food_safety_taipei dashboard if it exists
+    stmts.append("""
+DELETE FROM dashboard_groups WHERE dashboard_id IN (
+    SELECT id FROM dashboards WHERE index = 'food_safety_taipei'
+);
+DELETE FROM dashboards WHERE index = 'food_safety_taipei';
+""")
+
     for comp in components:
         idx = _s(comp["index"])
         stmts.append(f"""
@@ -1094,14 +1075,14 @@ ON CONFLICT (index) DO UPDATE
     SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
 """)
         stmts.append(f"""
-DELETE FROM query_charts WHERE index = {idx} AND city = {_s('taipei')};
+DELETE FROM query_charts WHERE index = {idx};
 INSERT INTO query_charts (
     index, city, query_type, query_chart,
     short_desc, long_desc, source,
     time_from, time_to,
     update_freq, update_freq_unit, created_at, updated_at
 ) VALUES (
-    {idx}, {_s('taipei')}, {_s(comp['query_type'])}, {_s(comp['query_chart'])},
+    {idx}, {_s('metrotaipei')}, {_s(comp['query_type'])}, {_s(comp['query_chart'])},
     {_s(comp['short_desc'])}, {_s(comp['long_desc'])}, {_s(comp['source'])},
     'static', 'static',
     {comp['update_freq']}, {_s(comp['update_freq_unit'])}, NOW(), NOW()
@@ -1122,7 +1103,7 @@ BEGIN
             icon = EXCLUDED.icon, updated_at = NOW()
     RETURNING id INTO dash_id;
     INSERT INTO dashboard_groups (dashboard_id, group_id)
-    SELECT dash_id, id FROM groups WHERE name = 'taipei'
+    SELECT dash_id, id FROM groups WHERE name = 'metrotaipei'
     ON CONFLICT DO NOTHING;
 END$$;
 """)

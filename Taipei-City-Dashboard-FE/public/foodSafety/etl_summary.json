@@ -1,0 +1,126 @@
+{
+  "generated_at": "2026-05-02T10:10:43.478713+00:00",
+  "raw_dir": "/Users/robert.chen/Taipei-City-Dashboard/Taipei-City-Dashboard-FE/public/foodSafety/raw",
+  "output_dir": "/Users/robert.chen/Taipei-City-Dashboard/Taipei-City-Dashboard-FE/public/foodSafety",
+  "download_mode": "skipped",
+  "downloads": [],
+  "datasets": [
+    {
+      "key": "taipei_inspection_failures",
+      "status": "raw_available",
+      "raw_sources": [
+        {
+          "file": "taipei_inspection_failures-1.csv",
+          "encoding": "utf-8-sig",
+          "rows": 249
+        },
+        {
+          "file": "taipei_inspection_failures-2.csv",
+          "encoding": "utf-8-sig",
+          "rows": 156
+        },
+        {
+          "file": "taipei_inspection_failures-3.csv",
+          "encoding": "utf-8-sig",
+          "rows": 268
+        }
+      ],
+      "normalized_rows": 673
+    },
+    {
+      "key": "taipei_hygiene_grade",
+      "status": "raw_available",
+      "raw_sources": [
+        {
+          "file": "taipei_hygiene_grade.csv",
+          "encoding": "utf-8-sig",
+          "rows": 1686
+        }
+      ],
+      "normalized_rows": 1686
+    },
+    {
+      "key": "taipei_haccp_inspection",
+      "status": "raw_available",
+      "raw_sources": [
+        {
+          "file": "taipei_haccp_inspection.csv",
+          "encoding": "utf-8-sig",
+          "rows": 14
+        }
+      ],
+      "normalized_rows": 14
+    },
+    {
+      "key": "taipei_market_mass_spec_failures",
+      "status": "raw_available",
+      "raw_sources": [
+        {
+          "file": "taipei_market_mass_spec_failures.csv",
+          "encoding": "utf-8-sig",
+          "rows": 63
+        }
+      ],
+      "normalized_rows": 63
+    },
+    {
+      "key": "taipei_agri_label_sampling",
+      "status": "raw_available",
+      "raw_sources": [
+        {
+          "file": "taipei_agri_label_sampling.csv",
+          "encoding": "big5",
+          "rows": 28
+        }
+      ],
+      "normalized_rows": 28
+    },
+    {
+      "key": "taipei_food_hygiene_work",
+      "status": "raw_available",
+      "raw_sources": [
+        {
+          "file": "taipei_food_hygiene_work.aspx",
+          "encoding": "utf-8-sig",
+          "rows": 56
+        }
+      ],
+      "normalized_rows": 56
+    },
+    {
+      "key": "taipei_food_business_count",
+      "status": "raw_available",
+      "raw_sources": [
+        {
+          "file": "taipei_food_business_count.csv",
+          "encoding": "big5",
+          "rows": 1
+        }
+      ],
+      "normalized_rows": 1
+    },
+    {
+      "key": "taipei_food_check_work",
+      "status": "raw_available",
+      "raw_sources": [
+        {
+          "file": "taipei_food_check_work-1.aspx",
+          "encoding": "utf-8-sig",
+          "rows": 14
+        },
+        {
+          "file": "taipei_food_check_work-2.aspx",
+          "encoding": "utf-8-sig",
+          "rows": 20
+        }
+      ],
+      "normalized_rows": 34
+    }
+  ],
+  "dashboard_files": [
+    "dashboard/food_inspection_failures.json",
+    "dashboard/food_grade_rank.json",
+    "dashboard/market_inspection_pass_rate.json",
+    "dashboard/district_food_risk.json"
+  ]
+}
