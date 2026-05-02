@@ -39,9 +39,9 @@ def _transfer(**kwargs):
     for col in data.columns:
         if "統計期" in col:
             column_mapping[col] = "year"
-        elif "不合格飭令改善家次" in col and "/" not in col:
+        elif "不合格飭令改善家次" in col and col.count("/") == 1:
             column_mapping[col] = "non_compliant_visits"
-        elif "稽查家次" in col and "/" not in col:
+        elif "稽查家次" in col and col.count("/") == 1:
             column_mapping[col] = "inspection_visits"
         elif "食品中毒人數" in col:
             column_mapping[col] = "food_poisoning_cases"

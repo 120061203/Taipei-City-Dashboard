@@ -262,6 +262,7 @@ export const useContentStore = defineStore("content", {
 			this.currentDashboard.name = currentDashboardInfo.name;
 			this.currentDashboard.icon = currentDashboardInfo.icon;
 
+
 			// Get the dashboard index data
 			try {
 				// 針對目前index 取得不分city的資料
@@ -269,20 +270,6 @@ export const useContentStore = defineStore("content", {
 					`/dashboard/${this.currentDashboard.index}`,
 				);
 				this.cityDashboard.components = response.data.data || [];
-
-				// Team 20: inject mock 食品中毒事件趨勢 (no DB backing) into food safety dashboard
-				if (this.currentDashboard.index === FOOD_SAFETY_DASHBOARD_INDEX) {
-					const poisoning = buildFoodSafetyComponents().find(
-						(c) => c.index === "foodborne_illness_trend" && c.city === FOOD_SAFETY_CITY,
-					);
-					if (poisoning) {
-						const gradeIdx = this.cityDashboard.components.findIndex(
-							(c) => c.index === "food_grade_rank",
-						);
-						const pos = gradeIdx >= 0 ? gradeIdx + 1 : this.cityDashboard.components.length;
-						this.cityDashboard.components.splice(pos, 0, JSON.parse(JSON.stringify(poisoning)));
-					}
-				}
 
 				this.filterCurrentDashboardContent();
 			} catch (error) {
@@ -318,8 +305,6 @@ export const useContentStore = defineStore("content", {
 					index++
 				) {
 					const component = this.cityDashboard.components[index];
-					// skip mock-only components that have no DB backing
-					if (component.index === "foodborne_illness_trend") continue;
 					try {
 						// 4-2. Get chart data
 						const response = await http.get(

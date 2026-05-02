@@ -664,18 +664,18 @@ function buildPoisoningText(data, city) {
 
 const compPoisoning = {
 	...baseFields,
-	id: 9003,
+	id: 1,
 	index: "foodborne_illness_trend",
 	name: "食品中毒事件趨勢",
 	chart_config: {
-		color: ["#ed5a5a", "#f0883e", "#eac54f", "#5a9cf8", "#7ee787", "#d2a8ff"],
-		types: ["FoodPoisoningYearlyChart"],
+		color: ["#ed5a5a"],
+		types: ["ColumnChart"],
 		unit: "人",
 		height: 195,
 		compact: true,
 		categories: null,
 	},
-	chart_data: buildPoisoningData("metrotaipei").series,
+	chart_data: null,
 	map_config: null,
 	map_filter: null,
 	history_config: null,
