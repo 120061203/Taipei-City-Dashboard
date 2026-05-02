@@ -58,6 +58,8 @@ const yearlyTooltip = ref({
 	year: "",
 	total: 0,
 	rows: [],
+	transform: "",
+	maxHeight: 220,
 });
 
 // ── monthly mode ──────────────────────────────────────────────
@@ -270,8 +272,18 @@ const moveYearlyTooltip = (event) => {
 	const container = event.currentTarget.closest(".fpyc-yearly");
 	if (!container) return;
 	const rect = container.getBoundingClientRect();
-	yearlyTooltip.value.x = event.clientX - rect.left + 18;
-	yearlyTooltip.value.y = event.clientY - rect.top + 18;
+	const localX = event.clientX - rect.left;
+	const localY = event.clientY - rect.top;
+	const flipX = localX > rect.width * 0.58;
+	const margin = 6;
+	const maxHeight = Math.max(150, rect.height - margin * 2);
+	const preferredY = localY + 18;
+	const maxY = rect.height - maxHeight - margin;
+
+	yearlyTooltip.value.x = localX + (flipX ? -18 : 18);
+	yearlyTooltip.value.y = Math.min(Math.max(preferredY, margin), Math.max(margin, maxY));
+	yearlyTooltip.value.transform = flipX ? "translateX(-100%)" : "";
+	yearlyTooltip.value.maxHeight = maxHeight;
 };
 
 const showYearlyTooltip = (event, bar) => {
@@ -491,7 +503,7 @@ const hideYearlyTooltip = () => {
         <div
           v-if="yearlyTooltip.show"
           class="fpyc-yearly-tooltip"
-          :style="{ left: `${yearlyTooltip.x}px`, top: `${yearlyTooltip.y}px` }"
+          :style="{ left: `${yearlyTooltip.x}px`, top: `${yearlyTooltip.y}px`, transform: yearlyTooltip.transform, maxHeight: `${yearlyTooltip.maxHeight}px` }"
         >
           <h6>{{ yearlyTooltip.year }}・病因比例</h6>
           <span class="fpyc-yearly-tooltip-total">患者數：{{ yearlyTooltip.total.toLocaleString() }} 人</span>
@@ -818,6 +830,7 @@ const hideYearlyTooltip = () => {
 			position: absolute;
 			z-index: 2;
 			min-width: 174px;
+			max-width: min(220px, calc(100% - 12px));
 			padding: 8px 10px;
 			border-radius: 6px;
 			background: rgba(23, 25, 28, 0.96);
@@ -826,13 +839,16 @@ const hideYearlyTooltip = () => {
 			color: #d1d5db;
 			font-size: 12px;
 			line-height: 1.45;
+			overflow-y: auto;
 			pointer-events: none;
+			transition: transform 0.08s;
 
 			h6 {
 				margin: 0 0 4px;
 				color: #f9fafb;
 				font-size: 12px;
 				font-weight: 700;
+				white-space: nowrap;
 			}
 
 			&-total {
@@ -849,6 +865,14 @@ const hideYearlyTooltip = () => {
 				color: #d1d5db;
 				font-size: 11px;
 				line-height: 1.45;
+				min-width: 0;
+
+				span {
+					min-width: 0;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
 
 				i {
 					width: 8px;
