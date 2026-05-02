@@ -626,6 +626,8 @@ def build_inventory(raw_dir: Path) -> list[dict[str, Any]]:
 
 def build_food_inspection_dashboard(rows: list[dict[str, Any]]) -> dict[str, Any]:
     sorted_rows = sorted(rows, key=lambda row: row.get("sample_date") or "", reverse=True)
+    by_category = count_by(rows, "category")
+    by_district = count_by(rows, "district")
     return {
         "summary": {
             "total_failures": len(rows),
@@ -633,9 +635,10 @@ def build_food_inspection_dashboard(rows: list[dict[str, Any]]) -> dict[str, Any
             "district_count": len({row.get("district") for row in rows if row.get("district")}),
         },
         "by_year": count_by(rows, "year"),
-        "by_district": count_by(rows, "district"),
-        "by_category": count_by(rows, "category"),
+        "by_district": by_district,
+        "by_category": by_category,
         "latest_records": sorted_rows[:500],
+        "series": [{"name": "違規類別件數", "data": [{"x": r["name"], "y": r["count"]} for r in by_category[:5]]}],
     }
 
 
@@ -659,6 +662,7 @@ def build_food_grade_dashboard(grades: list[dict[str, Any]], haccp: list[dict[st
         )
 
     district_rows.sort(key=lambda row: (row["excellent_rate"] or 0, row["total"]), reverse=True)
+    top5_by_total = sorted(district_rows, key=lambda r: r["total"], reverse=True)[:5]
     return {
         "summary": {
             "graded_businesses": len(grades),
@@ -668,6 +672,7 @@ def build_food_grade_dashboard(grades: list[dict[str, Any]], haccp: list[dict[st
         "by_district": district_rows,
         "haccp_by_district": count_by(haccp, "district"),
         "records": grades,
+        "series": [{"name": "通過分級評核業者數", "data": [{"x": r["district"], "y": r["total"]} for r in top5_by_total]}],
     }
 
 
@@ -752,6 +757,7 @@ def build_district_risk_dashboard(
             "latest_hygiene_work": latest_hygiene,
         },
         "by_district": district_rows,
+        "series": [{"name": "風險指數", "data": [{"x": r["district"], "y": r["risk_score"]} for r in district_rows]}],
         "check_work_by_year": sorted(check_work, key=lambda row: row.get("year") or 0),
         "hygiene_work_by_year": sorted(hygiene_work, key=lambda row: row.get("year") or 0),
     }
@@ -1184,8 +1190,13 @@ def run_etl(
         ),
     }
 
+    src_data_dir = output_dir.parent.parent / "src" / "store" / "foodSafetyData"
+    src_data_dir.mkdir(parents=True, exist_ok=True)
+    chart_keys = ["food_inspection_failures", "food_grade_rank", "district_food_risk"]
     for name, data in dashboards.items():
         write_json(dashboard_dir / f"{name}.json", data)
+        if name in chart_keys:
+            write_json(src_data_dir / f"{name}.json", {"series": data["series"]})
 
     if not skip_db:
         load_to_db(normalized, dashboards)

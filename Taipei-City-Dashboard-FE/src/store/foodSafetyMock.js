@@ -1,4 +1,7 @@
 import { foodPoisoningPatientSeries } from "./foodPoisoningPatientsData";
+import foodInspectionJson from "./foodSafetyData/food_inspection_failures.json";
+import foodGradeJson from "./foodSafetyData/food_grade_rank.json";
+import districtRiskJson from "./foodSafetyData/district_food_risk.json";
 
 // =============================================================
 // 食安守護 (Food Safety) Mock Dashboard - Team 20 Hackathon
@@ -347,7 +350,7 @@ const compMap = {
 		donutDataLabelOffset: 8,
 		categories: null,
 	},
-	chart_data: buildMapData("metrotaipei").series,
+	chart_data: foodInspectionJson.series,
 	map_config: [
 		{
 			index: "food_failures_metrotaipei",
@@ -573,7 +576,7 @@ const compRank = {
 		barLimit: 5,
 		categories: null,
 	},
-	chart_data: buildRankData("metrotaipei").series,
+	chart_data: foodGradeJson.series,
 	map_config: null,
 	map_filter: null,
 	history_config: null,
@@ -788,7 +791,7 @@ const compRisk = {
 		barLimit: 6,
 		categories: null,
 	},
-	chart_data: buildRiskData("metrotaipei").series,
+	chart_data: districtRiskJson.series,
 	map_config: null,
 	map_filter: null,
 	history_config: null,
