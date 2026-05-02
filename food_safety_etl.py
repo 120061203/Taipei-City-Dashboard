@@ -1088,21 +1088,24 @@ ON CONFLICT (index) DO UPDATE
     SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
 """)
         stmts.append(f"""
+DELETE FROM query_charts WHERE index = {idx} AND city = {_s('taipei')};
 INSERT INTO query_charts (
     index, city, query_type, query_chart,
     short_desc, long_desc, source,
+    time_from, time_to,
     update_freq, update_freq_unit, created_at, updated_at
 ) VALUES (
     {idx}, {_s('taipei')}, {_s(comp['query_type'])}, {_s(comp['query_chart'])},
     {_s(comp['short_desc'])}, {_s(comp['long_desc'])}, {_s(comp['source'])},
+    'static', 'static',
     {comp['update_freq']}, {_s(comp['update_freq_unit'])}, NOW(), NOW()
-) ON CONFLICT DO NOTHING;
+);
 """)
 
     indices_list = ", ".join(_s(c["index"]) for c in components)
     stmts.append(f"""
 DO $$
-DECLARE comp_ids INTEGER[];
+DECLARE comp_ids INTEGER[]; dash_id INTEGER;
 BEGIN
     SELECT ARRAY_AGG(id ORDER BY id) INTO comp_ids
     FROM components WHERE index IN ({indices_list});
@@ -1110,7 +1113,11 @@ BEGIN
     VALUES ({_s(_DASHBOARD_INDEX)}, {_s(_DASHBOARD_NAME)}, comp_ids, {_s(_DASHBOARD_ICON)}, NOW(), NOW())
     ON CONFLICT (index) DO UPDATE
         SET name = EXCLUDED.name, components = EXCLUDED.components,
-            icon = EXCLUDED.icon, updated_at = NOW();
+            icon = EXCLUDED.icon, updated_at = NOW()
+    RETURNING id INTO dash_id;
+    INSERT INTO dashboard_groups (dashboard_id, group_id)
+    SELECT dash_id, id FROM groups WHERE name = 'taipei'
+    ON CONFLICT DO NOTHING;
 END$$;
 """)
 
