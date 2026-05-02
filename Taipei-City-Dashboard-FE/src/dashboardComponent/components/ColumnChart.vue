@@ -33,11 +33,13 @@ function closeDrilldown() {
 }
 
 const isLargeDataSet = computed(() => {
+	if (!props.series?.[0]?.data) return false;
 	return props.series[0].data.length > 12
 })
 
 // Calculate initial width for large datasets only
 const initialWidth = computed(() => {
+	if (!props.series?.[0]?.data) return 0;
 	const WIDTH_PER_ITEM = 32
 	const itemCount = props.series[0].data.length;
 	return itemCount * WIDTH_PER_ITEM;

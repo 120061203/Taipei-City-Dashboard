@@ -199,7 +199,8 @@ const withFoodSafetyContext = (
 	return {
 		...component,
 		city,
-		chart_data: chartData.series,
+		// 若 chart_data 已明確設為 null，保留 null 讓 contentStore 從 API 撈取
+		chart_data: component.chart_data === null ? null : chartData.series,
 		source: sourceSummary(sourceKey, city),
 		source_detail: sourceText(sources),
 		links: sourceLinks(sources),
@@ -669,7 +670,7 @@ const compPoisoning = {
 	name: "食品中毒事件趨勢",
 	chart_config: {
 		color: ["#ed5a5a"],
-		types: ["ColumnChart"],
+		types: ["TimelineSeparateChart"],
 		unit: "人",
 		height: 195,
 		compact: true,
