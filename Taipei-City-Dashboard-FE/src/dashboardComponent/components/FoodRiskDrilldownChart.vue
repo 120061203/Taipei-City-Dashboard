@@ -97,7 +97,7 @@ const barSeries = computed(() => [
 ]);
 
 const chartHeight = computed(() => {
-	return Math.max(190, Math.min(245, 38 + selectedItemRows.value.length * 25));
+	return Math.max(260, 58 + selectedItemRows.value.length * 34);
 });
 
 const barOptions = computed(() => ({
@@ -234,33 +234,35 @@ function resetGroup() {
       </h6>
     </div>
 
-    <div
-      v-if="!selectedGroup"
-      class="food-risk-drilldown-heatmap"
-    >
-      <button
-        v-for="item in groupRows"
-        :key="item.label"
-        type="button"
-        class="food-risk-drilldown-heatmap-tile"
-        :style="{ backgroundColor: heatColor(item.value), color: heatTextColor(item.value) }"
-        :title="`${item.label}: ${item.value} ${chart_config.unit}`"
-        @click="selectGroup(item.label)"
+    <div class="food-risk-drilldown-body">
+      <div
+        v-if="!selectedGroup"
+        class="food-risk-drilldown-heatmap"
       >
-        <p>{{ item.label }}</p>
-        <h6>{{ item.value }}</h6>
-      </button>
-    </div>
+        <button
+          v-for="item in groupRows"
+          :key="item.label"
+          type="button"
+          class="food-risk-drilldown-heatmap-tile"
+          :style="{ backgroundColor: heatColor(item.value), color: heatTextColor(item.value) }"
+          :title="`${item.label}: ${item.value} ${chart_config.unit}`"
+          @click="selectGroup(item.label)"
+        >
+          <p>{{ item.label }}</p>
+          <h6>{{ item.value }}</h6>
+        </button>
+      </div>
 
-    <VueApexCharts
-      v-else
-      :key="selectedGroup"
-      width="100%"
-      :height="chartHeight"
-      type="bar"
-      :options="barOptions"
-      :series="barSeries"
-    />
+      <VueApexCharts
+        v-else
+        :key="selectedGroup"
+        width="100%"
+        :height="chartHeight"
+        type="bar"
+        :options="barOptions"
+        :series="barSeries"
+      />
+    </div>
   </div>
 </template>
 
@@ -269,22 +271,25 @@ function resetGroup() {
 	height: 100%;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: flex-start;
 	overflow: hidden;
 
 	&-toolbar {
 		width: 100%;
+		flex: 0 0 auto;
 		min-height: 32px;
 		display: grid;
 		grid-template-columns: 32px minmax(0, 1fr);
 		align-items: center;
 		gap: 8px;
 		box-sizing: border-box;
+		margin-bottom: 8px;
 		overflow: visible;
 
 		.food-risk-drilldown-back {
 			width: 32px;
 			height: 28px;
+			flex: 0 0 32px;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
@@ -325,6 +330,27 @@ function resetGroup() {
 			overflow: hidden;
 			white-space: nowrap;
 			text-overflow: ellipsis;
+		}
+	}
+
+	&-body {
+		width: 100%;
+		min-height: 0;
+		flex: 1 1 auto;
+		box-sizing: border-box;
+		padding-right: 2px;
+		overflow-x: hidden;
+		overflow-y: auto;
+		scrollbar-color: rgb(96, 96, 96) transparent;
+		scrollbar-width: thin;
+
+		&::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			border-radius: 999px;
+			background-color: rgb(96, 96, 96);
 		}
 	}
 
