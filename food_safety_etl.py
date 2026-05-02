@@ -721,18 +721,17 @@ def build_district_risk_dashboard(
     excellent_counter = Counter(row.get("district") for row in grades if row.get("grade") == "優" and row.get("district"))
     haccp_counter = Counter(row.get("district") for row in haccp if row.get("district"))
 
+    max_failures = max(failure_counter.values(), default=1)
+
     district_rows = []
     for district in districts:
         graded = grade_counter[district]
         excellent_rate = excellent_counter[district] / graded * 100 if graded else None
-        risk_score = min(
-            100,
-            round(
-                failure_counter[district] * 6
-                + ((100 - excellent_rate) * 0.35 if excellent_rate is not None else 0),
-                2,
-            ),
-        )
+        # Normalize failure count relative to city maximum (0–70 pts)
+        # Add grade penalty: low excellent-rate = higher risk (0–30 pts)
+        failure_score = (failure_counter[district] / max_failures) * 70
+        grade_score = ((100 - excellent_rate) * 0.30) if excellent_rate is not None else 30
+        risk_score = round(min(100, failure_score + grade_score), 2)
         district_rows.append(
             {
                 "district": district,
