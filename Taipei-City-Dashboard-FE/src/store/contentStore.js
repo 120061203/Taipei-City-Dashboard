@@ -262,6 +262,15 @@ export const useContentStore = defineStore("content", {
 			this.currentDashboard.name = currentDashboardInfo.name;
 			this.currentDashboard.icon = currentDashboardInfo.icon;
 
+			// Team 20: 食安守護 mock dashboard 短路 - 直接用本地 mock 資料
+			if (this.currentDashboard.index === FOOD_SAFETY_DASHBOARD_INDEX) {
+				this.cityDashboard.components = JSON.parse(
+					JSON.stringify(buildFoodSafetyComponents()),
+				);
+				this.filterCurrentDashboardContent();
+				this.setCurrentDashboardAllChartData();
+				return;
+			}
 
 			// Get the dashboard index data
 			try {
@@ -305,6 +314,10 @@ export const useContentStore = defineStore("content", {
 					index++
 				) {
 					const component = this.cityDashboard.components[index];
+					// 跳過已有 chart_data 的組件（mock 靜態資料）
+					if (component.chart_data !== null && component.chart_data !== undefined) {
+						continue;
+					}
 					try {
 						// 4-2. Get chart data
 						const response = await http.get(
