@@ -279,6 +279,10 @@ export const useContentStore = defineStore("content", {
 					index++
 				) {
 					const component = this.cityDashboard.components[index];
+					// 跳過已有 chart_data 的組件（mock 靜態資料）
+					if (component.chart_data !== null && component.chart_data !== undefined) {
+						continue;
+					}
 					try {
 						// 4-2. Get chart data
 						const response = await http.get(

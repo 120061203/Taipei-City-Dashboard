@@ -6,6 +6,7 @@ import "material-icons/iconfont/material-icons.css";
 import { getComponentDataTimeframe } from "./utilities/dataTimeframe";
 import { timeTerms } from "./utilities/AllTimes";
 import { chartTypes } from "./utilities/chartTypes";
+import { useDialogStore } from "../store/dialogStore";
 
 import ComponentTag from "./components/ComponentTag.vue";
 import TagTooltip from "./components/TagTooltip.vue";
@@ -70,12 +71,14 @@ const props = defineProps({
 	isFavorite: { type: Boolean, default: false },
 	deleteBtn: { type: Boolean, default: false },
 	addBtn: { type: Boolean, default: false },
+	shareBtn: { type: Boolean, default: false },
 	infoBtn: { type: Boolean, default: false },
 	infoBtnText: { type: String, default: "組件資訊" },
 	toggleDisable: { type: Boolean, default: false },
 	footer: { type: Boolean, default: true },
 	activeCity: { type: String, default: '' },
 	toggleOn: { type: Boolean, default: false },
+	initialChart: { type: String, default: "" },
 });
 
 const emits = defineEmits([
@@ -92,7 +95,12 @@ const emits = defineEmits([
 	"changeCity"
 ]);
 
-const activeChart = ref(props.config.chart_config.types[0]);
+const dialogStore = useDialogStore();
+const activeChart = ref(
+	props.config.chart_config.types.includes(props.initialChart)
+		? props.initialChart
+		: props.config.chart_config.types[0]
+);
 const activeCity = computed({
 	get: () => props.activeCity,
 	set: (value) => {
@@ -183,6 +191,15 @@ function updateMouseLocation(e) {
 function changeShowTagTooltipState(state) {
 	showTagTooltip.value = state;
 }
+
+function openShareComponent() {
+	dialogStore.showShareComponent({
+		config: JSON.parse(JSON.stringify(props.config)),
+		activeCity: activeCity.value || props.config.city,
+		initialChart: activeChart.value,
+	});
+}
+
 function returnChartComponent(name, svg) {
 	switch (name) {
 	case "DistrictChart":
@@ -317,6 +334,14 @@ function returnChartComponent(name, svg) {
           <span>favorite</span>
         </button>
         <button
+          v-if="shareBtn"
+          class="isShare"
+          title="分享圖表"
+          @click="openShareComponent"
+        >
+          <span>share</span>
+        </button>
+        <button
           v-if="deleteBtn"
           class="isDelete"
           @click="$emit('delete', config.id)"
@@ -325,7 +350,7 @@ function returnChartComponent(name, svg) {
         </button>
       </div>
       <div
-        v-else-if="mode.includes('map')"
+        v-if="mode.includes('map')"
         class="dashboardcomponent-header-toggle"
       >
         <label class="toggleswitch">
@@ -663,6 +688,10 @@ button:hover {
 				&:hover {
 					color: rgb(160, 112, 106);
 				}
+			}
+
+			button.isShare span {
+				color: #6aa4ff;
 			}
 		}
 

@@ -421,6 +421,7 @@ func (m *TWCC) handleStandardResponse(body io.Reader) (*llms.ContentResponse, er
 	if len(tools) == 0 && (strings.Contains(content, "<function=") || strings.Contains(content, "tool<")) {
 		tools, content = extractXMLToolCalls(content)
 	}
+	tools = sanitizeToolCalls(tools)
 
 	return &llms.ContentResponse{
 		Choices: []*llms.ContentChoice{{
@@ -433,6 +434,32 @@ func (m *TWCC) handleStandardResponse(body io.Reader) (*llms.ContentResponse, er
 			},
 		}},
 	}, nil
+}
+
+func sanitizeToolCalls(source []llms.ToolCall) []llms.ToolCall {
+	if len(source) == 0 {
+		return nil
+	}
+
+	tools := make([]llms.ToolCall, 0, 1)
+	for i, tc := range source {
+		if tc.FunctionCall == nil || tc.FunctionCall.Name == "" || tc.FunctionCall.Arguments == "" {
+			continue
+		}
+		if !json.Valid([]byte(tc.FunctionCall.Arguments)) {
+			logs.FError("Skipping malformed TWCC tool call arguments: %s", tc.FunctionCall.Arguments)
+			continue
+		}
+		if tc.ID == "" || tc.ID == "null" {
+			tc.ID = fmt.Sprintf("call_%d_%d", time.Now().UnixNano(), i)
+		}
+		if tc.Type == "" {
+			tc.Type = "function"
+		}
+		tools = append(tools, tc)
+		break
+	}
+	return tools
 }
 
 // extractXMLToolCalls identifies <function=NAME>{ARGS}</function> in text,

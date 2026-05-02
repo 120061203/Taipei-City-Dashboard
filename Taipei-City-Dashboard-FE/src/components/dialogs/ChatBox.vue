@@ -4,15 +4,18 @@ import { storeToRefs } from "pinia";
 import SendIcon from "../icons/SendIcon.vue";
 import BotLogo from "../icons/BotLogo.vue";
 import UserLogo from "../icons/UserLogo.vue";
+import DashboardComponent from "../../dashboardComponent/DashboardComponent.vue";
 
 import { useChatStore } from "../../store/chatStore";
 import { useContentStore } from "../../store/contentStore";
 import { useAuthStore } from "../../store/authStore";
+import { useDialogStore } from "../../store/dialogStore";
 import http from "../../router/axios";
 
 const chatStore = useChatStore();
 const contentStore = useContentStore();
 const authStore = useAuthStore();
+const dialogStore = useDialogStore();
 const { addChatData, addQueryData, saveChatLog } = chatStore;
 const { createDashboard } = contentStore;
 const { chatData } = storeToRefs(chatStore);
@@ -73,6 +76,17 @@ const sendBtnHandler = (text) => {
 
 const toggleSticky = () => {
 	isStickyOpen.value = !isStickyOpen.value;
+};
+
+const openShareComponent = (chat) => {
+	const { componentData } = chat;
+	const previewConfig = componentData?.previewConfig;
+	if (!previewConfig) return;
+	dialogStore.showShareComponent({
+		config: JSON.parse(JSON.stringify(previewConfig)),
+		activeCity: previewConfig.city || componentData?.cityCode,
+		initialChart: previewConfig.chart_config?.types?.[0],
+	});
 };
 
 watch(
@@ -137,6 +151,63 @@ watch(
               class="message--bubble"
             >
               <p>{{ chat.content }}</p>
+            </div>
+            <div
+              v-if="chat.componentData?.previewConfig"
+              class="component-preview-card"
+            >
+              <DashboardComponent
+                :config="chat.componentData.previewConfig"
+                mode="default"
+                :footer="false"
+                :active-city="chat.componentData.previewConfig.city"
+                :toggle-on="false"
+              />
+            </div>
+            <div
+              v-else-if="chat.componentData"
+              class="component-data-card"
+            >
+              <div class="component-data-card__header">
+                <span class="component-data-card__title">{{ chat.componentData.title }}</span>
+                <span class="component-data-card__city">{{ chat.componentData.city }}</span>
+              </div>
+              <div
+                v-if="chat.componentData.summary"
+                class="component-data-card__summary"
+              >
+                <span>{{ chat.componentData.summary.label }}</span>
+                <strong>{{ chat.componentData.summary.value }}</strong>
+                <span>{{ chat.componentData.summary.unit }}</span>
+              </div>
+              <table class="component-data-card__table">
+                <thead>
+                  <tr>
+                    <th>{{ chat.componentData.columns.label }}</th>
+                    <th>{{ chat.componentData.columns.value }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="row in chat.componentData.rows"
+                    :key="row.label"
+                  >
+                    <td>{{ row.label }}</td>
+                    <td>{{ row.value }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div
+              v-if="chat.componentData?.previewConfig"
+              class="component-share"
+            >
+              <button
+                class="component-share__button"
+                @click="openShareComponent(chat)"
+              >
+                分享圖表
+              </button>
             </div>
             <!-- 表格區 -->
             <div
@@ -405,6 +476,171 @@ $radius-20: 20px;
 							padding-left: 16px;
 							padding-right: 16px;
 							font-size: 16px;
+						}
+					}
+
+					.component-data-card {
+						width: 100%;
+						max-width: 320px;
+						border: 1px solid #666;
+						border-radius: $radius-10;
+						background: #202224;
+						color: $white;
+						padding: 12px;
+						box-sizing: border-box;
+
+						&__header {
+							display: flex;
+							align-items: center;
+							justify-content: space-between;
+							gap: 8px;
+							margin-bottom: 10px;
+						}
+
+						&__title {
+							font-weight: 700;
+							font-size: 15px;
+						}
+
+						&__city {
+							flex-shrink: 0;
+							padding: 2px 8px;
+							border-radius: 6px;
+							background: #2252d6;
+							font-weight: 700;
+							font-size: 13px;
+						}
+
+						&__summary {
+							display: flex;
+							align-items: baseline;
+							gap: 6px;
+							color: #b5b5b5;
+							margin-bottom: 10px;
+
+							strong {
+								color: $white;
+								font-size: 24px;
+							}
+						}
+
+						&__table {
+							width: 100%;
+							border-collapse: collapse;
+							font-size: 13px;
+
+							th,
+							td {
+								padding: 6px 4px;
+								border-bottom: 1px solid #3b3d40;
+								text-align: left;
+							}
+
+							th:last-child,
+							td:last-child {
+								text-align: right;
+							}
+						}
+					}
+
+					.component-preview-card {
+						width: 100%;
+						max-width: 330px;
+						border-radius: $radius-10;
+						overflow: hidden;
+
+						:deep(.dashboardcomponent) {
+							width: 100%;
+							max-width: 100%;
+							height: 330px;
+							max-height: 330px;
+							box-sizing: border-box;
+							padding: 12px;
+							background-color: $card-bg;
+							border: 1px solid #666;
+						}
+
+						:deep(.dashboardcomponent-header h3) {
+							font-size: 18px;
+							line-height: 1.2;
+						}
+
+						:deep(.dashboardcomponent-meta) {
+							grid-template-columns: minmax(0, 1fr);
+						}
+
+						:deep(.dashboardcomponent-source) {
+							font-size: 13px;
+							-webkit-line-clamp: 1;
+						}
+
+						:deep(.dashboardcomponent-control) {
+							padding: 4px 0;
+						}
+
+						:deep(.dashboardcomponent-control-group) {
+							transform: none;
+						}
+
+						:deep(.dashboardcomponent-chart) {
+							height: auto;
+							flex: 1 1 auto;
+							min-height: 0;
+							overflow: hidden;
+						}
+
+						:deep(.districtchart-title h5) {
+							font-size: 16px;
+						}
+
+						:deep(.districtchart-title h6) {
+							font-size: 24px;
+						}
+					}
+
+					.component-share {
+						width: 100%;
+						max-width: 330px;
+						display: flex;
+						flex-direction: column;
+						gap: 6px;
+
+						&__button {
+							align-self: flex-start;
+							border: 1px solid #6aa4ff;
+							border-radius: 8px;
+							background: #1f5fbf;
+							color: $white;
+							font-size: 14px;
+							font-weight: 700;
+							padding: 7px 12px;
+							cursor: pointer;
+
+							&:disabled {
+								cursor: wait;
+								opacity: 0.65;
+							}
+						}
+
+						&__link,
+						&__error {
+							margin: 0;
+							font-size: 12px;
+							line-height: 1.4;
+						}
+
+						&__link {
+							color: #9bc3ff;
+
+							span {
+								display: block;
+								max-width: 100%;
+								overflow-wrap: anywhere;
+							}
+						}
+
+						&__error {
+							color: #ff9b9b;
 						}
 					}
 

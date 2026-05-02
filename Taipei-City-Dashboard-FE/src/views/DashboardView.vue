@@ -88,6 +88,7 @@ function handleMoreInfo(item) {
       :city-tag="item.city_tag_override
         ? contentStore.cityManager.getCities(item.city_tag_override)
         : contentStore.cityManager.getTagList(contentStore.currentDashboard?.city)"
+      :share-btn="true"
       :favorite-btn="authStore.token ? true : false"
       :is-favorite="contentStore.favorites?.components.includes(item.id)"
       @favorite="
@@ -147,6 +148,7 @@ function handleMoreInfo(item) {
           .map((item) => item.index)
           .includes(contentStore.currentDashboard.index)
       "
+      :share-btn="true"
       :favorite-btn="
         authStore.token &&
           contentStore.currentDashboard.icon !== 'favorite'

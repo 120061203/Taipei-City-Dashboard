@@ -34,6 +34,7 @@ export const useDialogStore = defineStore("dialog", {
 			mobileLayers: false,
 			mobileNavigation: false,
 			moreInfo: false,
+			shareComponent: false,
 			notificationBar: false,
 			reportIssue: false,
 			userSettings: false,
@@ -58,6 +59,8 @@ export const useDialogStore = defineStore("dialog", {
 		},
 		// Stores the content for more info dialogs
 		moreInfoContent: null,
+		// Stores the content for share component dialogs
+		shareComponentContent: null,
 		// Stores Edit or Add mode for addeditdashboards dialog
 		addEdit: "",
 		// Stores the current timeout for notifications
@@ -79,6 +82,7 @@ export const useDialogStore = defineStore("dialog", {
 				this.dialogs[keys[i]] = false;
 			}
 			this.moreInfoContent = null;
+			this.shareComponentContent = null;
 		},
 		// Show the notification bar and update the notification message
 		showNotification(status, message, showtime = 3000) {
@@ -99,6 +103,11 @@ export const useDialogStore = defineStore("dialog", {
 		showMoreInfo(content) {
 			this.showDialog("moreInfo");
 			this.moreInfoContent = content;
+		},
+		// Show the share component dialog and update the content
+		showShareComponent(content) {
+			this.showDialog("shareComponent");
+			this.shareComponentContent = content;
 		},
 		// Show the report issue dialog and enter the id and name of the component of origin
 		showReportIssue(id, index, name) {

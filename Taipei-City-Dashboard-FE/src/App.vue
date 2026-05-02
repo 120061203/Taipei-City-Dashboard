@@ -31,6 +31,7 @@ import NotificationBar from "./components/dialogs/NotificationBar.vue";
 import InitialWarning from "./components/dialogs/InitialWarning.vue";
 import ComponentSideBar from "./components/utilities/bars/ComponentSideBar.vue";
 import LogIn from "./components/dialogs/LogIn.vue";
+import ShareComponent from "./components/dialogs/ShareComponent.vue";
 import ChatBox from "./components/dialogs/ChatBox.vue";
 import ChatBotIcon from "./components/icons/ChatBotIcon.vue";
 
@@ -261,6 +262,7 @@ onBeforeUnmount(() => {
     </div>
     <InitialWarning />
     <LogIn />
+    <ShareComponent />
     <div
       v-if="
         ['dashboard', 'mapview'].includes(authStore.currentPath) &&
