@@ -1,8 +1,8 @@
 -- Food safety tables for postgres-data (dashboard DB)
 -- Run by food_safety_etl.py before inserting normalized data rows.
+-- Uses CREATE TABLE IF NOT EXISTS + TRUNCATE to preserve schema on re-runs.
 
-DROP TABLE IF EXISTS food_inspection_failures;
-CREATE TABLE food_inspection_failures (
+CREATE TABLE IF NOT EXISTS food_inspection_failures (
     id            SERIAL PRIMARY KEY,
     city          TEXT,
     source_file   TEXT,
@@ -18,9 +18,9 @@ CREATE TABLE food_inspection_failures (
     result        TEXT,
     reason        TEXT
 );
+TRUNCATE TABLE food_inspection_failures RESTART IDENTITY;
 
-DROP TABLE IF EXISTS food_hygiene_grade;
-CREATE TABLE food_hygiene_grade (
+CREATE TABLE IF NOT EXISTS food_hygiene_grade (
     id              SERIAL PRIMARY KEY,
     city            TEXT,
     source_file     TEXT,
@@ -31,9 +31,9 @@ CREATE TABLE food_hygiene_grade (
     address         TEXT,
     grade           TEXT
 );
+TRUNCATE TABLE food_hygiene_grade RESTART IDENTITY;
 
-DROP TABLE IF EXISTS food_haccp_inspection;
-CREATE TABLE food_haccp_inspection (
+CREATE TABLE IF NOT EXISTS food_haccp_inspection (
     id            SERIAL PRIMARY KEY,
     city          TEXT,
     source_file   TEXT,
@@ -43,9 +43,9 @@ CREATE TABLE food_haccp_inspection (
     address       TEXT,
     category      TEXT
 );
+TRUNCATE TABLE food_haccp_inspection RESTART IDENTITY;
 
-DROP TABLE IF EXISTS food_market_spec_failures;
-CREATE TABLE food_market_spec_failures (
+CREATE TABLE IF NOT EXISTS food_market_spec_failures (
     id               SERIAL PRIMARY KEY,
     city             TEXT,
     source_file      TEXT,
@@ -60,9 +60,9 @@ CREATE TABLE food_market_spec_failures (
     follow_up_result TEXT,
     note             TEXT
 );
+TRUNCATE TABLE food_market_spec_failures RESTART IDENTITY;
 
-DROP TABLE IF EXISTS food_agri_label_sampling;
-CREATE TABLE food_agri_label_sampling (
+CREATE TABLE IF NOT EXISTS food_agri_label_sampling (
     id            SERIAL PRIMARY KEY,
     city          TEXT,
     source_file   TEXT,
@@ -74,9 +74,9 @@ CREATE TABLE food_agri_label_sampling (
     failed_count  INTEGER,
     pass_rate     NUMERIC
 );
+TRUNCATE TABLE food_agri_label_sampling RESTART IDENTITY;
 
-DROP TABLE IF EXISTS food_hygiene_work;
-CREATE TABLE food_hygiene_work (
+CREATE TABLE IF NOT EXISTS food_hygiene_work (
     id                                    SERIAL PRIMARY KEY,
     city                                  TEXT,
     source_file                           TEXT,
@@ -89,9 +89,9 @@ CREATE TABLE food_hygiene_work (
     market_inspection_visits              INTEGER,
     market_failed_improvement_visits      INTEGER
 );
+TRUNCATE TABLE food_hygiene_work RESTART IDENTITY;
 
-DROP TABLE IF EXISTS food_business_count;
-CREATE TABLE food_business_count (
+CREATE TABLE IF NOT EXISTS food_business_count (
     id             SERIAL PRIMARY KEY,
     city           TEXT,
     source_file    TEXT,
@@ -99,9 +99,9 @@ CREATE TABLE food_business_count (
     business_count INTEGER,
     scope          TEXT
 );
+TRUNCATE TABLE food_business_count RESTART IDENTITY;
 
-DROP TABLE IF EXISTS food_check_work;
-CREATE TABLE food_check_work (
+CREATE TABLE IF NOT EXISTS food_check_work (
     id                   SERIAL PRIMARY KEY,
     city                 TEXT,
     source_file          TEXT,
@@ -116,9 +116,10 @@ CREATE TABLE food_check_work (
     reason_counts        JSONB,
     transferred_unclosed INTEGER
 );
+TRUNCATE TABLE food_check_work RESTART IDENTITY;
 
-DROP TABLE IF EXISTS district_food_risk;
-CREATE TABLE district_food_risk (x_axis TEXT, data NUMERIC(6,2));
+CREATE TABLE IF NOT EXISTS district_food_risk (x_axis TEXT, data NUMERIC(6,2));
+TRUNCATE TABLE district_food_risk;
 
 -- Drop legacy tables from earlier ETL versions
 DROP TABLE IF EXISTS food_inspection_trend;
