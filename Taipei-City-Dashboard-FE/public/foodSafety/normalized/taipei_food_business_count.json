@@ -1,0 +1,9 @@
+[
+  {
+    "city": "臺北市",
+    "source_file": "taipei_food_business_count.csv",
+    "dataset_name": "食品業者登錄數",
+    "business_count": 94828,
+    "scope": "全部"
+  }
+]

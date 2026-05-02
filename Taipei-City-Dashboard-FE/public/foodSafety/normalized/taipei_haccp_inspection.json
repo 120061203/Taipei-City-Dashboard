@@ -1,0 +1,128 @@
+[
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000100",
+    "district": "內湖區",
+    "business_name": "天仁餐盒有限公司",
+    "address": "臺北市內湖區新明路321巷10弄8、10、12號1樓",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000100",
+    "district": "內湖區",
+    "business_name": "士福美食股份有限公司",
+    "address": "臺北市內湖區新明路193號",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000110",
+    "district": "士林區",
+    "business_name": "榮彬食品有限公司",
+    "address": "臺北市士林區福港街110巷1弄2之1號",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000100",
+    "district": "內湖區",
+    "business_name": "冠冕盒餐食品股份有限公司",
+    "address": "臺北市內湖區內湖路1段91巷38弄7號1樓",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000090",
+    "district": "南港區",
+    "business_name": "第一餐盒股份有限公司",
+    "address": "臺北市南港區重陽路263巷8號",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000090",
+    "district": "南港區",
+    "business_name": "宮保王食品有限公司",
+    "address": "臺北市南港區南港路3段149巷49弄12號、14號",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000100",
+    "district": "內湖區",
+    "business_name": "福氣食品有限公司",
+    "address": "臺北市內湖區文湖街60巷32號1樓",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000090",
+    "district": "南港區",
+    "business_name": "凱鴻素食有限公司",
+    "address": "臺北市南港區西新里松河街406號",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000090",
+    "district": "南港區",
+    "business_name": "鉅登團膳食品有限公司",
+    "address": "臺北市南港區南港路3段80巷32號2樓",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000100",
+    "district": "內湖區",
+    "business_name": "福冠團膳有限公司",
+    "address": "臺北市內湖區內湖路1段91巷18號1、2樓",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000010",
+    "district": "松山區",
+    "business_name": "高雄空廚股份有限公司松山廠",
+    "address": "臺北市松山區精忠里敦化北路405巷123弄9號1、2樓",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000110",
+    "district": "士林區",
+    "business_name": "太子油飯股份有限公司士林廠",
+    "address": "臺北市士林區前港街23、25及29號",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000120",
+    "district": "北投區",
+    "business_name": "廣和坐月子生技股份有限公司",
+    "address": "臺北市北投區一德里立功街122號2樓(廠房)、3樓(檢驗室)、6樓(倉庫)",
+    "category": "餐盒食品工廠"
+  },
+  {
+    "city": "臺北市",
+    "source_file": "taipei_haccp_inspection.csv",
+    "district_code": "63000050",
+    "district": "中正區",
+    "business_name": "國營臺灣鐵路股份有限公司附業營運處臺北餐旅分處",
+    "address": "臺北市中正區北平西路3號",
+    "category": "供應鐵路運輸旅客餐盒之食品業"
+  }
+]

@@ -2,13 +2,18 @@
 """
 Food-safety ETL for Taipei-City-Dashboard.
 
-It downloads the Taipei food-safety raw resources, cleans the raw files, then
-writes:
+Downloads Taipei food-safety raw resources, cleans them, writes JSON outputs,
+and optionally loads the results into the Dashboard PostgreSQL databases.
 
+Outputs:
 - public/foodSafety/raw/*: downloaded source files
 - public/foodSafety/normalized/*.json: cleaned records by dataset
 - public/foodSafety/dashboard/*.json: chart-ready aggregates
 - public/foodSafety/catalog_inventory.json: dataset availability inventory
+
+DB load (default on, skip with --skip-db):
+- postgres-data: creates/replaces 5 chart data tables
+- postgres-manager: registers 5 components + '食品安全' dashboard
 """
 
 from __future__ import annotations
@@ -17,12 +22,24 @@ import argparse
 import csv
 import json
 import re
+import subprocess
+import sys
 import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# ── DB settings ──────────────────────────────────────────────────────────────
+_POSTGRES_DATA_CONTAINER = "postgres-data"
+_POSTGRES_MANAGER_CONTAINER = "postgres-manager"
+_PG_USER = "postgres"
+_DATA_DB = "dashboard"
+_MANAGER_DB = "dashboardmanager"
+_DASHBOARD_INDEX = "food_safety_taipei"
+_DASHBOARD_NAME = "食品安全"
+_DASHBOARD_ICON = "verified"
 
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -740,11 +757,382 @@ def build_district_risk_dashboard(
     }
 
 
+# ── DB helpers ───────────────────────────────────────────────────────────────
+
+def _s(value: str | None) -> str:
+    if value is None:
+        return "NULL"
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _pg_array(items: list[str]) -> str:
+    return "ARRAY[" + ", ".join(_s(i) for i in items) + "]"
+
+
+def _run_sql(container: str, db: str, sql: str) -> None:
+    result = subprocess.run(
+        ["docker", "exec", "-i", container, "psql", "-U", _PG_USER, "-d", db, "-v", "ON_ERROR_STOP=1"],
+        input=sql.encode(),
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        print(f"[ERROR] SQL failed on {container}/{db}:\n{result.stderr.decode()}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _val(v: Any) -> str:
+    if v is None:
+        return "NULL"
+    if isinstance(v, bool):
+        return "TRUE" if v else "FALSE"
+    if isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, dict):
+        return _s(json.dumps(v, ensure_ascii=False))
+    return _s(str(v))
+
+
+def _insert_rows(table: str, columns: list[str], rows: list[dict[str, Any]]) -> str:
+    if not rows:
+        return ""
+    cols = ", ".join(columns)
+    values = ",\n  ".join(
+        "(" + ", ".join(_val(row.get(c)) for c in columns) + ")"
+        for row in rows
+    )
+    return f"INSERT INTO {table} ({cols}) VALUES\n  {values};\n"
+
+
+def _create_normalized_tables(normalized: dict[str, list[dict[str, Any]]], dashboards: dict[str, Any]) -> None:
+    stmts: list[str] = []
+
+    # ── 1. food_inspection_failures ──────────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS food_inspection_failures;
+CREATE TABLE food_inspection_failures (
+    id            SERIAL PRIMARY KEY,
+    city          TEXT,
+    source_file   TEXT,
+    project       TEXT,
+    sample_date   DATE,
+    year          INTEGER,
+    category      TEXT,
+    sample_name   TEXT,
+    postal_code   TEXT,
+    district      TEXT,
+    business_name TEXT,
+    address       TEXT,
+    result        TEXT,
+    reason        TEXT
+);""")
+    stmts.append(_insert_rows(
+        "food_inspection_failures",
+        ["city", "source_file", "project", "sample_date", "year", "category",
+         "sample_name", "postal_code", "district", "business_name", "address", "result", "reason"],
+        normalized.get("taipei_inspection_failures", []),
+    ))
+
+    # ── 2. food_hygiene_grade ─────────────────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS food_hygiene_grade;
+CREATE TABLE food_hygiene_grade (
+    id              SERIAL PRIMARY KEY,
+    city            TEXT,
+    source_file     TEXT,
+    district_code   TEXT,
+    district        TEXT,
+    business_name   TEXT,
+    registration_id TEXT,
+    address         TEXT,
+    grade           TEXT
+);""")
+    stmts.append(_insert_rows(
+        "food_hygiene_grade",
+        ["city", "source_file", "district_code", "district", "business_name", "registration_id", "address", "grade"],
+        normalized.get("taipei_hygiene_grade", []),
+    ))
+
+    # ── 3. food_haccp_inspection ──────────────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS food_haccp_inspection;
+CREATE TABLE food_haccp_inspection (
+    id            SERIAL PRIMARY KEY,
+    city          TEXT,
+    source_file   TEXT,
+    district_code TEXT,
+    district      TEXT,
+    business_name TEXT,
+    address       TEXT,
+    category      TEXT
+);""")
+    stmts.append(_insert_rows(
+        "food_haccp_inspection",
+        ["city", "source_file", "district_code", "district", "business_name", "address", "category"],
+        normalized.get("taipei_haccp_inspection", []),
+    ))
+
+    # ── 4. food_market_spec_failures ──────────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS food_market_spec_failures;
+CREATE TABLE food_market_spec_failures (
+    id               SERIAL PRIMARY KEY,
+    city             TEXT,
+    source_file      TEXT,
+    sample_date      DATE,
+    year             INTEGER,
+    sample_name      TEXT,
+    supplier_code    TEXT,
+    supplier         TEXT,
+    case_count       INTEGER,
+    total_weight_kg  NUMERIC,
+    follow_up_date   DATE,
+    follow_up_result TEXT,
+    note             TEXT
+);""")
+    stmts.append(_insert_rows(
+        "food_market_spec_failures",
+        ["city", "source_file", "sample_date", "year", "sample_name", "supplier_code",
+         "supplier", "case_count", "total_weight_kg", "follow_up_date", "follow_up_result", "note"],
+        normalized.get("taipei_market_mass_spec_failures", []),
+    ))
+
+    # ── 5. food_agri_label_sampling ───────────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS food_agri_label_sampling;
+CREATE TABLE food_agri_label_sampling (
+    id            SERIAL PRIMARY KEY,
+    city          TEXT,
+    source_file   TEXT,
+    year          INTEGER,
+    check_type    TEXT,
+    item          TEXT,
+    sample_count  INTEGER,
+    passed_count  INTEGER,
+    failed_count  INTEGER,
+    pass_rate     NUMERIC
+);""")
+    stmts.append(_insert_rows(
+        "food_agri_label_sampling",
+        ["city", "source_file", "year", "check_type", "item",
+         "sample_count", "passed_count", "failed_count", "pass_rate"],
+        normalized.get("taipei_agri_label_sampling", []),
+    ))
+
+    # ── 6. food_hygiene_work ──────────────────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS food_hygiene_work;
+CREATE TABLE food_hygiene_work (
+    id                                    SERIAL PRIMARY KEY,
+    city                                  TEXT,
+    source_file                           TEXT,
+    year                                  INTEGER,
+    inspection_visits                     INTEGER,
+    failed_improvement_visits             INTEGER,
+    food_poisoning_people                 INTEGER,
+    restaurant_inspection_visits          INTEGER,
+    restaurant_failed_improvement_visits  INTEGER,
+    market_inspection_visits              INTEGER,
+    market_failed_improvement_visits      INTEGER
+);""")
+    stmts.append(_insert_rows(
+        "food_hygiene_work",
+        ["city", "source_file", "year", "inspection_visits", "failed_improvement_visits",
+         "food_poisoning_people", "restaurant_inspection_visits", "restaurant_failed_improvement_visits",
+         "market_inspection_visits", "market_failed_improvement_visits"],
+        normalized.get("taipei_food_hygiene_work", []),
+    ))
+
+    # ── 7. food_business_count ────────────────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS food_business_count;
+CREATE TABLE food_business_count (
+    id             SERIAL PRIMARY KEY,
+    city           TEXT,
+    source_file    TEXT,
+    dataset_name   TEXT,
+    business_count INTEGER,
+    scope          TEXT
+);""")
+    stmts.append(_insert_rows(
+        "food_business_count",
+        ["city", "source_file", "dataset_name", "business_count", "scope"],
+        normalized.get("taipei_food_business_count", []),
+    ))
+
+    # ── 8. food_check_work ────────────────────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS food_check_work;
+CREATE TABLE food_check_work (
+    id                   SERIAL PRIMARY KEY,
+    city                 TEXT,
+    source_file          TEXT,
+    year                 INTEGER,
+    checked_total        INTEGER,
+    checked_inspection   INTEGER,
+    checked_lab          INTEGER,
+    failed_total         INTEGER,
+    failed_inspection    INTEGER,
+    failed_lab           INTEGER,
+    failure_rate         NUMERIC,
+    reason_counts        JSONB,
+    transferred_unclosed INTEGER
+);""")
+    stmts.append(_insert_rows(
+        "food_check_work",
+        ["city", "source_file", "year", "checked_total", "checked_inspection", "checked_lab",
+         "failed_total", "failed_inspection", "failed_lab", "failure_rate",
+         "reason_counts", "transferred_unclosed"],
+        normalized.get("taipei_food_check_work", []),
+    ))
+
+    # ── 9. district_food_risk (computed) ──────────────────────────────────────
+    stmts.append("""
+DROP TABLE IF EXISTS district_food_risk;
+CREATE TABLE district_food_risk (x_axis TEXT, data NUMERIC(6,2));
+""")
+    for row in sorted(dashboards["district_food_risk"]["by_district"], key=lambda r: -r["risk_score"]):
+        stmts.append(f"INSERT INTO district_food_risk VALUES ({_s(row['district'])}, {row['risk_score']});")
+
+    # ── drop old aggregated tables if they exist ──────────────────────────────
+    for old_table in ("food_inspection_trend", "food_inspection_by_district", "agri_sampling_pass_rate"):
+        stmts.append(f"DROP TABLE IF EXISTS {old_table};")
+
+    _run_sql(_POSTGRES_DATA_CONTAINER, _DATA_DB, "\n".join(stmts))
+
+
+def _register_components() -> None:
+    components = [
+        {
+            "index": "food_inspection_trend",
+            "name": "食品抽驗不合格趨勢",
+            "color": ["#E05C5C", "#F5A623"],
+            "types": ["ColumnChart"],
+            "unit": "件",
+            "query_type": "two_d",
+            "query_chart": "SELECT year::text AS x_axis, COUNT(*)::integer AS data FROM food_inspection_failures WHERE year IS NOT NULL GROUP BY year ORDER BY year",
+            "short_desc": "臺北市食品抽驗不合格件數，依年度統計",
+            "long_desc": "資料來源：臺北市衛生局食品抽驗不合格清冊",
+            "source": "臺北市衛生局",
+            "update_freq": 1,
+            "update_freq_unit": "year",
+        },
+        {
+            "index": "food_inspection_by_district",
+            "name": "行政區食品抽驗不合格",
+            "color": ["#E05C5C"],
+            "types": ["BarChart"],
+            "unit": "件",
+            "query_type": "two_d",
+            "query_chart": "SELECT district AS x_axis, COUNT(*)::integer AS data FROM food_inspection_failures WHERE district IS NOT NULL GROUP BY district ORDER BY data DESC",
+            "short_desc": "臺北市各行政區食品抽驗不合格件數",
+            "long_desc": "資料來源：臺北市衛生局食品抽驗不合格清冊",
+            "source": "臺北市衛生局",
+            "update_freq": 1,
+            "update_freq_unit": "year",
+        },
+        {
+            "index": "food_hygiene_grade",
+            "name": "餐飲衛生分級評核",
+            "color": ["#56B96D", "#F8CF58"],
+            "types": ["BarPercentChart"],
+            "unit": "家",
+            "query_type": "three_d",
+            "query_chart": "SELECT district AS x_axis, NULL::text AS icon, grade AS y_axis, COUNT(*)::integer AS data FROM food_hygiene_grade WHERE district IS NOT NULL AND grade IS NOT NULL GROUP BY district, grade ORDER BY district, grade DESC",
+            "short_desc": "臺北市通過餐飲衛生管理分級評核業者，優/良分佈",
+            "long_desc": "資料來源：臺北市衛生局餐飲衛生管理分級評核",
+            "source": "臺北市衛生局",
+            "update_freq": 1,
+            "update_freq_unit": "year",
+        },
+        {
+            "index": "district_food_risk",
+            "name": "行政區食品安全風險指數",
+            "color": ["#F05C5C", "#F5A623", "#56B96D"],
+            "types": ["ColumnChart"],
+            "unit": "分",
+            "query_type": "two_d",
+            "query_chart": "SELECT x_axis, data FROM district_food_risk ORDER BY data DESC",
+            "short_desc": "依不合格件數與衛生分級計算各行政區風險指數（0–100）",
+            "long_desc": "計算公式：不合格件數×6 + (100-優等率)×0.35，最高100分",
+            "source": "臺北市衛生局",
+            "update_freq": 1,
+            "update_freq_unit": "year",
+        },
+        {
+            "index": "agri_sampling_pass_rate",
+            "name": "標章農產品抽檢合格率",
+            "color": ["#56B96D"],
+            "types": ["ColumnChart"],
+            "unit": "%",
+            "query_type": "two_d",
+            "query_chart": "SELECT year::text AS x_axis, ROUND(AVG(pass_rate)::numeric, 2) AS data FROM food_agri_label_sampling WHERE year IS NOT NULL AND pass_rate IS NOT NULL GROUP BY year ORDER BY year",
+            "short_desc": "臺北市標章農產品抽驗合格率，依年度統計",
+            "long_desc": "資料來源：臺北市政府標章農產品抽檢清冊",
+            "source": "臺北市產業局",
+            "update_freq": 1,
+            "update_freq_unit": "year",
+        },
+    ]
+
+    stmts: list[str] = []
+    for comp in components:
+        idx = _s(comp["index"])
+        stmts.append(f"""
+INSERT INTO components (index, name) VALUES ({idx}, {_s(comp['name'])})
+ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
+""")
+        stmts.append(f"""
+INSERT INTO component_charts (index, color, types, unit)
+VALUES ({idx}, {_pg_array(comp['color'])}, {_pg_array(comp['types'])}, {_s(comp['unit'])})
+ON CONFLICT (index) DO UPDATE
+    SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
+""")
+        stmts.append(f"""
+INSERT INTO query_charts (
+    index, city, query_type, query_chart,
+    short_desc, long_desc, source,
+    update_freq, update_freq_unit, created_at, updated_at
+) VALUES (
+    {idx}, {_s('taipei')}, {_s(comp['query_type'])}, {_s(comp['query_chart'])},
+    {_s(comp['short_desc'])}, {_s(comp['long_desc'])}, {_s(comp['source'])},
+    {comp['update_freq']}, {_s(comp['update_freq_unit'])}, NOW(), NOW()
+) ON CONFLICT DO NOTHING;
+""")
+
+    indices_list = ", ".join(_s(c["index"]) for c in components)
+    stmts.append(f"""
+DO $$
+DECLARE comp_ids INTEGER[];
+BEGIN
+    SELECT ARRAY_AGG(id ORDER BY id) INTO comp_ids
+    FROM components WHERE index IN ({indices_list});
+    INSERT INTO dashboards (index, name, components, icon, created_at, updated_at)
+    VALUES ({_s(_DASHBOARD_INDEX)}, {_s(_DASHBOARD_NAME)}, comp_ids, {_s(_DASHBOARD_ICON)}, NOW(), NOW())
+    ON CONFLICT (index) DO UPDATE
+        SET name = EXCLUDED.name, components = EXCLUDED.components,
+            icon = EXCLUDED.icon, updated_at = NOW();
+END$$;
+""")
+
+    _run_sql(_POSTGRES_MANAGER_CONTAINER, _MANAGER_DB, "\n".join(stmts))
+
+
+def load_to_db(normalized: dict[str, list[dict[str, Any]]], dashboards: dict[str, Any]) -> None:
+    print("[db] Creating normalized tables in postgres-data...")
+    _create_normalized_tables(normalized, dashboards)
+    print("[db] Registering components in postgres-manager...")
+    _register_components()
+    print(f"[db] Dashboard '{_DASHBOARD_NAME}' ready.")
+
+
+# ── ETL ───────────────────────────────────────────────────────────────────────
+
 def run_etl(
     raw_dir: Path,
     output_dir: Path,
     skip_download: bool,
     refresh_raw: bool,
+    skip_db: bool = False,
 ) -> dict[str, Any]:
     normalized_dir = output_dir / "normalized"
     dashboard_dir = output_dir / "dashboard"
@@ -792,6 +1180,9 @@ def run_etl(
     for name, data in dashboards.items():
         write_json(dashboard_dir / f"{name}.json", data)
 
+    if not skip_db:
+        load_to_db(normalized, dashboards)
+
     run_summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "raw_dir": str(raw_dir),
@@ -814,7 +1205,9 @@ def run_etl(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Download and clean Taipei food-safety datasets into JSON.")
+    parser = argparse.ArgumentParser(
+        description="Download and clean Taipei food-safety datasets, then load into Dashboard DBs."
+    )
     parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_FOOD_SAFETY_DIR)
     parser.add_argument(
@@ -827,6 +1220,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Download raw resources again even when matching local raw files already exist.",
     )
+    parser.add_argument(
+        "--skip-db",
+        action="store_true",
+        help="Skip writing data to PostgreSQL (ETL + JSON output only).",
+    )
     return parser.parse_args()
 
 
@@ -837,6 +1235,7 @@ def main() -> None:
         args.output_dir,
         args.skip_download,
         args.refresh_raw,
+        args.skip_db,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 

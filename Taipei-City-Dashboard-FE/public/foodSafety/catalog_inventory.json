@@ -1,0 +1,179 @@
+[
+  {
+    "key": "taipei_inspection_failures",
+    "city": "taipei",
+    "dataset_id": "09a917a0-0fb5-47e1-957c-5f1268fba517",
+    "name": "臺北市衛生局食品抽驗不合格清冊",
+    "agency": "衛生局",
+    "update_frequency": "每1年",
+    "role": "食品抽驗不合格紀錄",
+    "dataset_page_url": "https://data.taipei/dataset/detail?id=09a917a0-0fb5-47e1-957c-5f1268fba517",
+    "access_urls": [
+      "https://data.taipei/api/dataset/09a917a0-0fb5-47e1-957c-5f1268fba517/resource/bb347e3d-626a-46e5-bb96-9061e8d08c26/download",
+      "https://data.taipei/api/dataset/09a917a0-0fb5-47e1-957c-5f1268fba517/resource/bc24a40f-5687-4338-8f9a-449de248ab93/download",
+      "https://data.taipei/api/dataset/09a917a0-0fb5-47e1-957c-5f1268fba517/resource/3fc106cb-c8aa-4f74-8dbc-3272c7ffcae0/download"
+    ],
+    "raw_glob": "taipei_inspection_failures-*.csv",
+    "expected_raw_files": [
+      "taipei_inspection_failures-1.csv",
+      "taipei_inspection_failures-2.csv",
+      "taipei_inspection_failures-3.csv"
+    ],
+    "status": "raw_available",
+    "raw_files": [
+      "taipei_inspection_failures-1.csv",
+      "taipei_inspection_failures-2.csv",
+      "taipei_inspection_failures-3.csv"
+    ]
+  },
+  {
+    "key": "taipei_hygiene_grade",
+    "city": "taipei",
+    "dataset_id": "59579c19-a561-4564-8c0f-545bfb32c0f6",
+    "name": "臺北市通過餐飲衛生管理分級評核業者",
+    "agency": "衛生局",
+    "update_frequency": "每1年",
+    "role": "餐飲衛生分級評核業者",
+    "dataset_page_url": "https://data.taipei/dataset/detail?id=59579c19-a561-4564-8c0f-545bfb32c0f6",
+    "access_urls": [
+      "https://data.taipei/api/dataset/59579c19-a561-4564-8c0f-545bfb32c0f6/resource/c5646d80-9118-4439-b924-075f96371d75/download"
+    ],
+    "raw_glob": "taipei_hygiene_grade.csv",
+    "expected_raw_files": [
+      "taipei_hygiene_grade.csv"
+    ],
+    "status": "raw_available",
+    "raw_files": [
+      "taipei_hygiene_grade.csv"
+    ]
+  },
+  {
+    "key": "taipei_haccp_inspection",
+    "city": "taipei",
+    "dataset_id": "bb665f7f-085c-40f9-9b9a-844e46da9c65",
+    "name": "臺北市HACCP稽查",
+    "agency": "衛生局",
+    "update_frequency": "不定期更新",
+    "role": "HACCP 稽查業者",
+    "dataset_page_url": "https://data.taipei/dataset/detail?id=bb665f7f-085c-40f9-9b9a-844e46da9c65",
+    "access_urls": [
+      "https://data.taipei/api/dataset/bb665f7f-085c-40f9-9b9a-844e46da9c65/resource/43839156-d54e-48e5-a957-ada2f228f655/download"
+    ],
+    "raw_glob": "taipei_haccp_inspection.csv",
+    "expected_raw_files": [
+      "taipei_haccp_inspection.csv"
+    ],
+    "status": "raw_available",
+    "raw_files": [
+      "taipei_haccp_inspection.csv"
+    ]
+  },
+  {
+    "key": "taipei_market_mass_spec_failures",
+    "city": "taipei",
+    "dataset_id": "ad63197e-217c-472b-a63f-94b0d29d0e7a",
+    "name": "臺北市批發市場質譜化學快檢不合格統計資料",
+    "agency": "產業局市場處",
+    "update_frequency": "每1月",
+    "role": "批發市場質譜化學快檢不合格統計",
+    "dataset_page_url": "https://data.taipei/dataset/detail?id=ad63197e-217c-472b-a63f-94b0d29d0e7a",
+    "access_urls": [
+      "https://data.taipei/api/dataset/ad63197e-217c-472b-a63f-94b0d29d0e7a/resource/617777b1-5082-4efb-b372-1a57951bd6aa/download"
+    ],
+    "raw_glob": "taipei_market_mass_spec_failures.csv",
+    "expected_raw_files": [
+      "taipei_market_mass_spec_failures.csv"
+    ],
+    "status": "raw_available",
+    "raw_files": [
+      "taipei_market_mass_spec_failures.csv"
+    ]
+  },
+  {
+    "key": "taipei_agri_label_sampling",
+    "city": "taipei",
+    "dataset_id": "8ab917b0-1029-4003-b776-f169b4e561f1",
+    "name": "臺北市政府標章農產品抽檢清冊",
+    "agency": "產業局",
+    "update_frequency": "不定期更新",
+    "role": "標章農產品抽檢合格率",
+    "dataset_page_url": "https://data.taipei/dataset/detail?id=8ab917b0-1029-4003-b776-f169b4e561f1",
+    "access_urls": [
+      "https://data.taipei/api/dataset/8ab917b0-1029-4003-b776-f169b4e561f1/resource/b93ade0e-8492-4f82-97f3-e30fdd13cd9f/download"
+    ],
+    "raw_glob": "taipei_agri_label_sampling.csv",
+    "expected_raw_files": [
+      "taipei_agri_label_sampling.csv"
+    ],
+    "status": "raw_available",
+    "raw_files": [
+      "taipei_agri_label_sampling.csv"
+    ]
+  },
+  {
+    "key": "taipei_food_hygiene_work",
+    "city": "taipei",
+    "dataset_id": "7d50657f-b35b-496e-b83f-5713893b9a9e",
+    "name": "臺北市食品衛生管理工作",
+    "agency": "主計處",
+    "update_frequency": "每1年",
+    "role": "食品衛生稽查與不合格改善",
+    "dataset_page_url": "https://data.taipei/dataset/detail?id=7d50657f-b35b-496e-b83f-5713893b9a9e",
+    "access_urls": [
+      "https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=5900&kind=21&type=0&funid=a05031801&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1"
+    ],
+    "raw_glob": "taipei_food_hygiene_work.aspx",
+    "expected_raw_files": [
+      "taipei_food_hygiene_work.aspx"
+    ],
+    "status": "raw_available",
+    "raw_files": [
+      "taipei_food_hygiene_work.aspx"
+    ]
+  },
+  {
+    "key": "taipei_food_business_count",
+    "city": "taipei",
+    "dataset_id": "9431f450-57d6-4c23-aca6-0ff50de49f0d",
+    "name": "臺北市食品業者登錄數",
+    "agency": "衛生局",
+    "update_frequency": "不定期更新",
+    "role": "食品業者登錄數",
+    "dataset_page_url": "https://data.taipei/dataset/detail?id=9431f450-57d6-4c23-aca6-0ff50de49f0d",
+    "access_urls": [
+      "https://data.taipei/api/dataset/9431f450-57d6-4c23-aca6-0ff50de49f0d/resource/2227c204-5f9f-4b20-8c6d-c6048eab6475/download"
+    ],
+    "raw_glob": "taipei_food_business_count.csv",
+    "expected_raw_files": [
+      "taipei_food_business_count.csv"
+    ],
+    "status": "raw_available",
+    "raw_files": [
+      "taipei_food_business_count.csv"
+    ]
+  },
+  {
+    "key": "taipei_food_check_work",
+    "city": "taipei",
+    "dataset_id": "c3ae074c-f65f-4f69-bf65-2c00a674e870",
+    "name": "臺北市食品衛生管理查驗工作",
+    "agency": "主計處",
+    "update_frequency": "每1年",
+    "role": "食品衛生查驗不符比率",
+    "dataset_page_url": "https://data.taipei/dataset/detail?id=c3ae074c-f65f-4f69-bf65-2c00a674e870",
+    "access_urls": [
+      "https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=8100&ymt=9400&kind=21&type=0&funid=a05032001&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1",
+      "https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=9500&kind=21&type=0&funid=a05032002&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1"
+    ],
+    "raw_glob": "taipei_food_check_work-*.aspx",
+    "expected_raw_files": [
+      "taipei_food_check_work-1.aspx",
+      "taipei_food_check_work-2.aspx"
+    ],
+    "status": "raw_available",
+    "raw_files": [
+      "taipei_food_check_work-1.aspx",
+      "taipei_food_check_work-2.aspx"
+    ]
+  }
+]
