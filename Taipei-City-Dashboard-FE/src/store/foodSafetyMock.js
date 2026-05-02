@@ -1,3 +1,5 @@
+import { foodPoisoningPatientSeries } from "./foodPoisoningPatientsData";
+
 // =============================================================
 // 食安守護 (Food Safety) Mock Dashboard - Team 20 Hackathon
 // =============================================================
@@ -13,9 +15,9 @@
 //      - TP bb665f7f  HACCP 稽查                       (不定期)
 //      - NTP 8E64B205 餐飲業者（含座標）              (每日)
 //      欄位: 業者名稱、地址、評核結果（A/B/C 或 優/良/HACCP）
-//   ③ 食品中毒事件趨勢（資料源：食藥署民國 95-114 年食品中毒發生狀況）
-//      - 全台食品中毒年報資料（20 年完整資料）
-//      欄位: 案件數、患者數、死亡數、病因物質、攝食場所、原因食品
+//   ③ 食品中毒事件趨勢
+//      - 衛生福利部食品藥物管理署 食品中毒發生狀況 (每年)
+//      欄位: 年度、月份案件數、月份患者數、主要病因患者數
 //   ④ 行政區食安風險指數
 //      - TP 7d50657f  食品衛生管理工作               (每年)
 //      - TP 9431f450  食品業者登錄數                 (不定期)
@@ -599,90 +601,44 @@ export { districtTopRestaurants };
 //    20 年完整資料：案件數、患者數、死亡數、病因物質、攝食場所、原因食品
 // =============================================================
 
-// 民國 105-114 年（西元 2016-2025）案件 / 患者
-const poisoningYearly = [
-	{ year: "2016", cases: 486, patients: 5260, deaths: 0 },
-	{ year: "2017", cases: 528, patients: 6232, deaths: 0 },
-	{ year: "2018", cases: 398, patients: 4616, deaths: 0 },
-	{ year: "2019", cases: 503, patients: 6944, deaths: 2 },
-	{ year: "2020", cases: 506, patients: 4920, deaths: 0 },
-	{ year: "2021", cases: 498, patients: 5823, deaths: 0 },
-	{ year: "2022", cases: 499, patients: 4495, deaths: 0 },
-	{ year: "2023", cases: 633, patients: 5196, deaths: 1 },
-	{ year: "2024", cases: 1750, patients: 9045, deaths: 10 },
-	{ year: "2025", cases: 1212, patients: 5650, deaths: 0 },
-];
-
-// 近 5 年（2021-2025）TOP 病因物質與攝食場所
-const poisoningPathogens = [
-	{ name: "諾羅病毒", cases: 1164, patients: 10189 },
-	{ name: "金黃色葡萄球菌", cases: 206, patients: 3626 },
-	{ name: "仙人掌桿菌", cases: 202, patients: 4689 },
-	{ name: "腸炎弧菌", cases: 99, patients: 1048 },
-	{ name: "沙門氏桿菌", cases: 99, patients: 2864 },
-];
-
-const poisoningLocations = [
-	{ name: "供膳之營業場所", cases: 3253 },
-	{ name: "自宅", cases: 721 },
-	{ name: "學校", cases: 280 },
-	{ name: "攤販", cases: 124 },
-	{ name: "辦公場所", cases: 111 },
-];
-
-const poisoningCityFactors = {
-	[FOOD_SAFETY_CITY]: 0.19,
-	taipei: 0.08,
-};
-
-function buildPoisoningData(city) {
-	const factor = poisoningCityFactors[city] || poisoningCityFactors[FOOD_SAFETY_CITY];
-	const yearsSlice = poisoningYearly.slice(-10).map((year) => ({
-		...year,
-		cases: Math.round(year.cases * factor),
-		patients: Math.round(year.patients * factor),
-		deaths: Math.round(year.deaths * factor),
-	}));
-	const latest = yearsSlice[yearsSlice.length - 1];
-	const previous = yearsSlice[yearsSlice.length - 2];
-	const changePct = previous
-		? Math.round(((latest.cases - previous.cases) / previous.cases) * 100)
+function buildPoisoningData() {
+	const series = foodPoisoningPatientSeries;
+	const latest = series[series.length - 1] || {};
+	const previous = series[series.length - 2] || {};
+	const changePct = previous.patients
+		? Math.round(((latest.patients - previous.patients) / previous.patients) * 100)
 		: 0;
+	const topPathogen = [...(latest.pathogens || [])]
+		.sort((a, b) => b.y - a.y)[0] || { x: "-", y: 0 };
+
 	return {
-		series: [
-			{
-				name: "案件數",
-				data: yearsSlice.map((y) => ({ x: y.year, y: y.cases })),
-			},
-			{
-				name: "患者數",
-				data: yearsSlice.map((y) => ({ x: y.year, y: y.patients })),
-			},
-		],
+		series,
 		latest,
 		previous,
 		changePct,
-		topPathogen: poisoningPathogens[0],
-		topLocation: poisoningLocations[0],
+		topPathogen: {
+			name: topPathogen.x,
+			patients: topPathogen.y,
+		},
 	};
 }
 
 function buildPoisoningInsights(data, city) {
 	return [
 		{
-			label: "最新估計案件",
-			value: `${formatNumber(data.latest.cases)} 件`,
-			helper: `${CITY_LABEL[city]} 2025`,
+			label: "最新患者數",
+			value: `${formatNumber(data.latest.patients)} 人`,
+			helper: `${CITY_LABEL[city]} ${data.latest.name}`,
 		},
 		{
-			label: "年變化",
+			label: "患者年變化",
 			value: `${data.changePct > 0 ? "+" : ""}${data.changePct}%`,
-			helper: "相較 2024",
+			helper: `相較 ${data.previous.name}`,
 		},
 		{
 			label: "主要病因",
 			value: data.topPathogen.name,
-			helper: "近 5 年最高",
+			helper: `${formatNumber(data.topPathogen.patients)} 人`,
 		},
 	];
 }
@@ -694,11 +650,11 @@ function buildPoisoningText(data, city) {
 			? `增加 ${data.changePct}%`
 			: `減少 ${Math.abs(data.changePct)}%`;
 	return {
-		short: `${label}食品中毒趨勢以食藥署年報乘上區域外食風險權重估計，2025 年約 ${formatNumber(data.latest.cases)} 件，較 2024 年${trendText}。`,
+		short: `${label}食品中毒趨勢採用食藥署年報資料，${data.latest.name}患者數 ${formatNumber(data.latest.patients)} 人，較 ${data.previous.name}${trendText}。`,
 		long:
-			"此元件將食藥署食品中毒年報轉為區域化風險觀察：折線同時呈現案件數與患者數，讓使用者分辨「事件變多」與「單一事件影響人數變大」兩種不同風險。病因物質與攝食場所用於解釋趨勢，避免只看到暴增數字卻不知道風險來源。",
+			"此元件採用新版食品中毒年月與病因分析圖。月份模式用環狀長條同時比較各月案件數與患者數；年份模式用堆疊長條呈現各主要病因的患者占比，讓使用者能分辨事件頻率、患者規模與病因結構。",
 		useCase:
-			"若案件數上升但患者數沒有等比例上升，代表零星事件增加；若患者數同步放大，代表大型供膳或群聚場景需要優先管控。外食、團膳與活動供餐可優先避開高風險病因與場所。",
+			"管理端可先用月份模式找出季節性高峰，再切到年份模式確認高峰是否由特定病因驅動；外食、團膳與活動供餐則可依主要病因調整保存、加熱、交叉污染與群聚感染管控。",
 	};
 }
 
@@ -708,10 +664,10 @@ const compPoisoning = {
 	index: "foodborne_illness_trend",
 	name: "食品中毒事件趨勢",
 	chart_config: {
-		color: ["#ed5a5a", "#f0883e"],
-		types: ["TimelineSeparateChart", "ColumnChart"],
-		unit: "件",
-		height: 185,
+		color: ["#ed5a5a", "#f0883e", "#eac54f", "#5a9cf8", "#7ee787", "#d2a8ff"],
+		types: ["FoodPoisoningYearlyChart"],
+		unit: "人",
+		height: 195,
 		compact: true,
 		categories: null,
 	},
@@ -725,16 +681,11 @@ const compPoisoning = {
 	update_freq: 1,
 	update_freq_unit: "year",
 	short_desc:
-		"近 10 年全台食品中毒案件趨勢。2024 年案件數從 633 件爆增到 1,750 件（+177%），死亡 10 人創 20 年新高 — 主因諾羅病毒（佔 60%）、最高風險場所為「供膳之營業場所」。本元件回答「最近吃外食該擔心什麼」。",
+		"用食藥署民國 90-114 年食品中毒年報觀察月份高峰與主要病因。月份模式看案件數/患者數，年份模式看各病因患者占比。",
 	long_desc:
-		"食品中毒事件趨勢用案件數與患者數兩條線回答不同問題：案件數代表事件頻率，患者數代表事件規模。若兩者一起上升，通常表示供膳或群聚場所的風險擴大；若只有案件數上升，則偏向零星事件增加。",
+		"食品中毒事件趨勢用新版年月與病因圖回答兩個問題：月份模式比較每月案件數與患者數，年份模式比較主要病因造成的患者數占比。這比單純折線更能看出季節、年度與病因結構。",
 	use_case:
-		"市府、學校或活動單位可用此元件判斷近期供餐風險，民眾也能從主要病因物質與高風險攝食場所理解該注意的不是單一店名，而是外食保存、共同供膳與群聚感染條件。",
-	// 額外攜帶的 metadata 給未來深掘
-	extra: {
-		topPathogens: poisoningPathogens,
-		topLocations: poisoningLocations,
-	},
+		"市府、學校或活動單位可用月份模式判斷供餐風險高峰，再用年份模式確認主要病因，進一步安排保存、加熱、衛教與供膳管理。",
 };
 
 // =============================================================
