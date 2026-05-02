@@ -56,7 +56,7 @@ INSERT INTO query_charts (
     time_from, time_to, update_freq, update_freq_unit, created_at, updated_at
 ) VALUES (
     'food_inspection_failures', 'metrotaipei', 'two_d',
-    'SELECT category AS x_axis, COUNT(*)::integer AS data FROM food_inspection_failures WHERE category IS NOT NULL GROUP BY category ORDER BY data DESC LIMIT 5',
+    'SELECT category AS x_axis, COUNT(*)::integer AS data FROM food_inspection_failures WHERE category IS NOT NULL GROUP BY category ORDER BY data DESC',
     '臺北市近期食品抽驗不合格件數，依業者類別統計前五名',
     '資料來源：臺北市衛生局食品抽驗不合格清冊',
     '臺北市衛生局',
