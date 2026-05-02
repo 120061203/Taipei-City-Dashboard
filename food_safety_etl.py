@@ -775,6 +775,13 @@ def _pg_array(items: list[str]) -> str:
     return "ARRAY[" + ", ".join(_s(i) for i in items) + "]"
 
 
+SQL_DIR = REPO_ROOT / "db-sample-data"
+
+
+def _run_sql_file(container: str, db: str, filename: str) -> None:
+    _run_sql(container, db, (SQL_DIR / filename).read_text(encoding="utf-8"))
+
+
 def _run_sql(container: str, db: str, sql: str) -> None:
     result = subprocess.run(
         ["docker", "exec", "-i", container, "psql", "-U", _PG_USER, "-d", db, "-v", "ON_ERROR_STOP=1"],
@@ -810,136 +817,39 @@ def _insert_rows(table: str, columns: list[str], rows: list[dict[str, Any]]) -> 
 
 
 def _create_normalized_tables(normalized: dict[str, list[dict[str, Any]]], dashboards: dict[str, Any]) -> None:
+    # DDL: create/replace all tables
+    _run_sql_file(_POSTGRES_DATA_CONTAINER, _DATA_DB, "food_safety_tables.sql")
+
     stmts: list[str] = []
 
-    # ── 1. food_inspection_failures ──────────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS food_inspection_failures;
-CREATE TABLE food_inspection_failures (
-    id            SERIAL PRIMARY KEY,
-    city          TEXT,
-    source_file   TEXT,
-    project       TEXT,
-    sample_date   DATE,
-    year          INTEGER,
-    category      TEXT,
-    sample_name   TEXT,
-    postal_code   TEXT,
-    district      TEXT,
-    business_name TEXT,
-    address       TEXT,
-    result        TEXT,
-    reason        TEXT
-);""")
     stmts.append(_insert_rows(
         "food_inspection_failures",
         ["city", "source_file", "project", "sample_date", "year", "category",
          "sample_name", "postal_code", "district", "business_name", "address", "result", "reason"],
         normalized.get("taipei_inspection_failures", []),
     ))
-
-    # ── 2. food_hygiene_grade ─────────────────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS food_hygiene_grade;
-CREATE TABLE food_hygiene_grade (
-    id              SERIAL PRIMARY KEY,
-    city            TEXT,
-    source_file     TEXT,
-    district_code   TEXT,
-    district        TEXT,
-    business_name   TEXT,
-    registration_id TEXT,
-    address         TEXT,
-    grade           TEXT
-);""")
     stmts.append(_insert_rows(
         "food_hygiene_grade",
         ["city", "source_file", "district_code", "district", "business_name", "registration_id", "address", "grade"],
         normalized.get("taipei_hygiene_grade", []),
     ))
-
-    # ── 3. food_haccp_inspection ──────────────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS food_haccp_inspection;
-CREATE TABLE food_haccp_inspection (
-    id            SERIAL PRIMARY KEY,
-    city          TEXT,
-    source_file   TEXT,
-    district_code TEXT,
-    district      TEXT,
-    business_name TEXT,
-    address       TEXT,
-    category      TEXT
-);""")
     stmts.append(_insert_rows(
         "food_haccp_inspection",
         ["city", "source_file", "district_code", "district", "business_name", "address", "category"],
         normalized.get("taipei_haccp_inspection", []),
     ))
-
-    # ── 4. food_market_spec_failures ──────────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS food_market_spec_failures;
-CREATE TABLE food_market_spec_failures (
-    id               SERIAL PRIMARY KEY,
-    city             TEXT,
-    source_file      TEXT,
-    sample_date      DATE,
-    year             INTEGER,
-    sample_name      TEXT,
-    supplier_code    TEXT,
-    supplier         TEXT,
-    case_count       INTEGER,
-    total_weight_kg  NUMERIC,
-    follow_up_date   DATE,
-    follow_up_result TEXT,
-    note             TEXT
-);""")
     stmts.append(_insert_rows(
         "food_market_spec_failures",
         ["city", "source_file", "sample_date", "year", "sample_name", "supplier_code",
          "supplier", "case_count", "total_weight_kg", "follow_up_date", "follow_up_result", "note"],
         normalized.get("taipei_market_mass_spec_failures", []),
     ))
-
-    # ── 5. food_agri_label_sampling ───────────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS food_agri_label_sampling;
-CREATE TABLE food_agri_label_sampling (
-    id            SERIAL PRIMARY KEY,
-    city          TEXT,
-    source_file   TEXT,
-    year          INTEGER,
-    check_type    TEXT,
-    item          TEXT,
-    sample_count  INTEGER,
-    passed_count  INTEGER,
-    failed_count  INTEGER,
-    pass_rate     NUMERIC
-);""")
     stmts.append(_insert_rows(
         "food_agri_label_sampling",
         ["city", "source_file", "year", "check_type", "item",
          "sample_count", "passed_count", "failed_count", "pass_rate"],
         normalized.get("taipei_agri_label_sampling", []),
     ))
-
-    # ── 6. food_hygiene_work ──────────────────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS food_hygiene_work;
-CREATE TABLE food_hygiene_work (
-    id                                    SERIAL PRIMARY KEY,
-    city                                  TEXT,
-    source_file                           TEXT,
-    year                                  INTEGER,
-    inspection_visits                     INTEGER,
-    failed_improvement_visits             INTEGER,
-    food_poisoning_people                 INTEGER,
-    restaurant_inspection_visits          INTEGER,
-    restaurant_failed_improvement_visits  INTEGER,
-    market_inspection_visits              INTEGER,
-    market_failed_improvement_visits      INTEGER
-);""")
     stmts.append(_insert_rows(
         "food_hygiene_work",
         ["city", "source_file", "year", "inspection_visits", "failed_improvement_visits",
@@ -947,42 +857,11 @@ CREATE TABLE food_hygiene_work (
          "market_inspection_visits", "market_failed_improvement_visits"],
         normalized.get("taipei_food_hygiene_work", []),
     ))
-
-    # ── 7. food_business_count ────────────────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS food_business_count;
-CREATE TABLE food_business_count (
-    id             SERIAL PRIMARY KEY,
-    city           TEXT,
-    source_file    TEXT,
-    dataset_name   TEXT,
-    business_count INTEGER,
-    scope          TEXT
-);""")
     stmts.append(_insert_rows(
         "food_business_count",
         ["city", "source_file", "dataset_name", "business_count", "scope"],
         normalized.get("taipei_food_business_count", []),
     ))
-
-    # ── 8. food_check_work ────────────────────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS food_check_work;
-CREATE TABLE food_check_work (
-    id                   SERIAL PRIMARY KEY,
-    city                 TEXT,
-    source_file          TEXT,
-    year                 INTEGER,
-    checked_total        INTEGER,
-    checked_inspection   INTEGER,
-    checked_lab          INTEGER,
-    failed_total         INTEGER,
-    failed_inspection    INTEGER,
-    failed_lab           INTEGER,
-    failure_rate         NUMERIC,
-    reason_counts        JSONB,
-    transferred_unclosed INTEGER
-);""")
     stmts.append(_insert_rows(
         "food_check_work",
         ["city", "source_file", "year", "checked_total", "checked_inspection", "checked_lab",
@@ -991,124 +870,15 @@ CREATE TABLE food_check_work (
         normalized.get("taipei_food_check_work", []),
     ))
 
-    # ── 9. district_food_risk (computed) ──────────────────────────────────────
-    stmts.append("""
-DROP TABLE IF EXISTS district_food_risk;
-CREATE TABLE district_food_risk (x_axis TEXT, data NUMERIC(6,2));
-""")
+    # district_food_risk rows are computed — insert dynamically
     for row in sorted(dashboards["district_food_risk"]["by_district"], key=lambda r: -r["risk_score"]):
         stmts.append(f"INSERT INTO district_food_risk VALUES ({_s(row['district'])}, {row['risk_score']});")
-
-    # ── drop old aggregated tables if they exist ──────────────────────────────
-    for old_table in ("food_inspection_trend", "food_inspection_by_district", "agri_sampling_pass_rate"):
-        stmts.append(f"DROP TABLE IF EXISTS {old_table};")
 
     _run_sql(_POSTGRES_DATA_CONTAINER, _DATA_DB, "\n".join(stmts))
 
 
 def _register_components() -> None:
-    components = [
-        {
-            "index": "food_inspection_failures",
-            "name": "食品抽驗不合格地圖",
-            "color": ["#ed5a5a", "#f0883e", "#eac54f", "#5a9cf8", "#7ee787", "#d2a8ff"],
-            "types": ["BarChart", "DonutChart"],
-            "unit": "件",
-            "query_type": "two_d",
-            "query_chart": "SELECT category AS x_axis, COUNT(*)::integer AS data FROM food_inspection_failures WHERE category IS NOT NULL GROUP BY category ORDER BY data DESC LIMIT 5",
-            "short_desc": "臺北市近期食品抽驗不合格件數，依業者類別統計前五名",
-            "long_desc": "資料來源：臺北市衛生局食品抽驗不合格清冊",
-            "source": "臺北市衛生局",
-            "update_freq": 1,
-            "update_freq_unit": "year",
-        },
-        {
-            "index": "food_grade_rank",
-            "name": "餐飲衛生分級榜",
-            "color": ["#7ee787", "#5a9cf8", "#eac54f"],
-            "types": ["BarChart", "ColumnChart"],
-            "unit": "家",
-            "query_type": "two_d",
-            "query_chart": "SELECT district AS x_axis, COUNT(*)::integer AS data FROM food_hygiene_grade WHERE district IS NOT NULL GROUP BY district ORDER BY data DESC LIMIT 5",
-            "short_desc": "臺北市通過餐飲衛生管理分級評核業者，依行政區統計前五名",
-            "long_desc": "資料來源：臺北市衛生局餐飲衛生管理分級評核與HACCP稽查",
-            "source": "臺北市衛生局",
-            "update_freq": 1,
-            "update_freq_unit": "year",
-        },
-        {
-            "index": "district_food_risk",
-            "name": "行政區食安風險指數",
-            "color": ["#ed5a5a"],
-            "types": ["DistrictChart", "BarChart"],
-            "unit": "指數",
-            "query_type": "two_d",
-            "query_chart": "SELECT x_axis, data FROM district_food_risk ORDER BY data DESC",
-            "short_desc": "依不合格件數與衛生分級計算各行政區風險指數（0–100）",
-            "long_desc": "計算公式：不合格件數×6 + (100-優等率)×0.35，最高100分",
-            "source": "臺北市衛生局",
-            "update_freq": 1,
-            "update_freq_unit": "year",
-        },
-    ]
-
-    stmts: list[str] = []
-
-    # Clean up old food_safety_taipei dashboard if it exists
-    stmts.append("""
-DELETE FROM dashboard_groups WHERE dashboard_id IN (
-    SELECT id FROM dashboards WHERE index = 'food_safety_taipei'
-);
-DELETE FROM dashboards WHERE index = 'food_safety_taipei';
-""")
-
-    for comp in components:
-        idx = _s(comp["index"])
-        stmts.append(f"""
-INSERT INTO components (index, name) VALUES ({idx}, {_s(comp['name'])})
-ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
-""")
-        stmts.append(f"""
-INSERT INTO component_charts (index, color, types, unit)
-VALUES ({idx}, {_pg_array(comp['color'])}, {_pg_array(comp['types'])}, {_s(comp['unit'])})
-ON CONFLICT (index) DO UPDATE
-    SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
-""")
-        stmts.append(f"""
-DELETE FROM query_charts WHERE index = {idx};
-INSERT INTO query_charts (
-    index, city, query_type, query_chart,
-    short_desc, long_desc, source,
-    time_from, time_to,
-    update_freq, update_freq_unit, created_at, updated_at
-) VALUES (
-    {idx}, {_s('metrotaipei')}, {_s(comp['query_type'])}, {_s(comp['query_chart'])},
-    {_s(comp['short_desc'])}, {_s(comp['long_desc'])}, {_s(comp['source'])},
-    'static', 'static',
-    {comp['update_freq']}, {_s(comp['update_freq_unit'])}, NOW(), NOW()
-);
-""")
-
-    indices_list = ", ".join(_s(c["index"]) for c in components)
-    stmts.append(f"""
-DO $$
-DECLARE comp_ids INTEGER[]; dash_id INTEGER;
-BEGIN
-    SELECT ARRAY_AGG(id ORDER BY id) INTO comp_ids
-    FROM components WHERE index IN ({indices_list});
-    INSERT INTO dashboards (index, name, components, icon, created_at, updated_at)
-    VALUES ({_s(_DASHBOARD_INDEX)}, {_s(_DASHBOARD_NAME)}, comp_ids, {_s(_DASHBOARD_ICON)}, NOW(), NOW())
-    ON CONFLICT (index) DO UPDATE
-        SET name = EXCLUDED.name, components = EXCLUDED.components,
-            icon = EXCLUDED.icon, updated_at = NOW()
-    RETURNING id INTO dash_id;
-    INSERT INTO dashboard_groups (dashboard_id, group_id)
-    SELECT dash_id, id FROM groups WHERE name = 'metrotaipei'
-    ON CONFLICT DO NOTHING;
-END$$;
-""")
-
-    _run_sql(_POSTGRES_MANAGER_CONTAINER, _MANAGER_DB, "\n".join(stmts))
+    _run_sql_file(_POSTGRES_MANAGER_CONTAINER, _MANAGER_DB, "food_safety_components.sql")
 
 
 def load_to_db(normalized: dict[str, list[dict[str, Any]]], dashboards: dict[str, Any]) -> None:
