@@ -5,7 +5,7 @@
 DELETE FROM dashboard_groups WHERE dashboard_id IN (
     SELECT id FROM dashboards WHERE index IN ('food_safety_taipei', 'food_safety_metrotpe')
 );
-DELETE FROM dashboards WHERE index = 'food_safety_taipei';
+DELETE FROM dashboards WHERE index IN ('food_safety_taipei', 'food_safety_metrotpe');
 DELETE FROM query_charts WHERE index = 'food_inspection_category_risk';
 DELETE FROM component_charts WHERE index = 'food_inspection_category_risk';
 DELETE FROM components WHERE index = 'food_inspection_category_risk';
@@ -171,7 +171,7 @@ BEGIN
         'foodborne_illness_trend'
     );
     INSERT INTO dashboards (index, name, components, icon, created_at, updated_at)
-    VALUES ('food_safety_metrotpe', '食安守護', comp_ids, 'restaurant', NOW(), NOW())
+    VALUES ('food_safety_taipei', '食安守護', comp_ids, 'restaurant', NOW(), NOW())
     ON CONFLICT (index) DO UPDATE
         SET name      = EXCLUDED.name,
             components = EXCLUDED.components,

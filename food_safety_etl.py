@@ -36,7 +36,7 @@ _POSTGRES_MANAGER_CONTAINER = "postgres-manager"
 _PG_USER = "postgres"
 _DATA_DB = "dashboard"
 _MANAGER_DB = "dashboardmanager"
-_DASHBOARD_INDEX = "food_safety_metrotpe"
+_DASHBOARD_INDEX = "food_safety_taipei"
 _DASHBOARD_NAME = "食安守護"
 _DASHBOARD_ICON = "restaurant"
 

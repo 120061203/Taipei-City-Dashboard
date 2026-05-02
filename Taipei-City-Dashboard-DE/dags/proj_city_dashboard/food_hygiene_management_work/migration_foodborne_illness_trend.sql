@@ -83,7 +83,7 @@ ON CONFLICT DO NOTHING;
 
 -- ============================================================
 -- 4. postgres-manager: 將組件加入食安儀表板
---    （若 food_safety_metrotpe 儀表板已存在）
+--    （若 food_safety_taipei 儀表板已存在）
 -- ============================================================
 UPDATE dashboards
 SET
@@ -92,7 +92,7 @@ SET
         (SELECT id FROM components WHERE index = 'foodborne_illness_trend')
     ),
     updated_at = NOW()
-WHERE index = 'food_safety_metrotpe'
+WHERE index = 'food_safety_taipei'
   AND NOT (
       (SELECT id FROM components WHERE index = 'foodborne_illness_trend')
       = ANY(components)
