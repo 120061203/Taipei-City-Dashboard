@@ -1,3 +1,5 @@
+import { foodPoisoningPatientSeries } from "./foodPoisoningPatientsData";
+
 // =============================================================
 // 食安守護 (Food Safety) Mock Dashboard - Team 20 Hackathon
 // =============================================================
@@ -13,13 +15,13 @@
 //      - TP bb665f7f  HACCP 稽查                       (不定期)
 //      - NTP 8E64B205 餐飲業者（含座標）              (每日)
 //      欄位: 業者名稱、地址、評核結果（A/B/C 或 優/良/HACCP）
-//   ③ 市場食材抽驗合格率
-//      - TP ad63197e  批發市場質譜化學快檢           (每月)
-//      - TP 8ab917b0  標章農產品抽檢清冊             (不定期)
-//      - NTP D2D69F7E 市售食品抽驗合格率             (每季)
-//      - NTP B57C14E9 市售食品標示合格率             (每季)
-//      欄位: 檢體類別、合格率、來源廠商
-//   ④ 行政區食安風險指數
+//   ③ 歷年食物中毒患者數
+//      - 衛生福利部食品藥物管理署 食品中毒發生狀況 (每年)
+//      欄位: 年度、患者數
+//   ④ 主要病因物質分布
+//      - 衛生福利部食品藥物管理署 食品中毒發生狀況 (每年)
+//      欄位: 病原名稱、患者數
+//   ⑤ 行政區食安風險指數
 //      - TP 7d50657f  食品衛生管理工作               (每年)
 //      - TP 9431f450  食品業者登錄數                 (不定期)
 //      - TP c3ae074c  食品衛生管理查驗工作           (每年)
@@ -291,50 +293,34 @@ const compRank = {
 };
 
 // =============================================================
-// ③ 市場食材抽驗合格率
-//    TP ad63197e + TP 8ab917b0 + NTP D2D69F7E + NTP B57C14E9
+// ③ 食物中毒年月與病因分析
+//    衛生福利部食品藥物管理署 食品中毒發生狀況 (民國90-114年)
+//    自訂圖表：FoodPoisoningYearlyChart
+//    series 格式: [{ name, patients, monthly: number[12], pathogens: {x,y}[] }]
+//    - 數值皆為患者數，資料由 data/food_poisoning.sqlite 匯出
 // =============================================================
-const months = [
-	"2025/05", "2025/06", "2025/07", "2025/08", "2025/09", "2025/10",
-	"2025/11", "2025/12", "2026/01", "2026/02", "2026/03", "2026/04",
-];
-const compMarket = {
+const compPoisoningCases = {
 	...baseFields,
 	id: 9003,
-	index: "market_inspection_pass_rate",
-	name: "市場食材抽驗合格率",
+	index: "food_poisoning_yearly",
+	name: "食物中毒年月與病因分析",
 	chart_config: {
-		color: ["#7ee787", "#5a9cf8"],
-		types: ["TimelineSeparateChart", "ColumnChart"],
-		unit: "%",
+		color: ["#ed5a5a", "#f0883e", "#eac54f", "#5a9cf8", "#7ee787", "#d2a8ff"],
+		types: ["FoodPoisoningYearlyChart"],
+		unit: "人",
 		categories: null,
 	},
-	chart_data: [
-		{
-			name: "雙北合格率",
-			data: months.map((m, i) => ({
-				x: m,
-				y: [94.1, 95.0, 94.8, 95.3, 95.7, 95.5, 96.0, 95.8, 96.2, 96.5, 96.0, 96.3][i],
-			})),
-		},
-		{
-			name: "全國平均",
-			data: months.map((m, i) => ({
-				x: m,
-				y: [93.2, 93.8, 93.5, 94.0, 94.2, 94.5, 94.8, 94.6, 95.0, 95.2, 94.9, 95.1][i],
-			})),
-		},
-	],
+	chart_data: foodPoisoningPatientSeries,
 	map_config: null,
 	map_filter: null,
 	history_config: null,
-	source: sourceText(foodSafetyDataSources.marketPassRate),
-	links: sourceLinks(foodSafetyDataSources.marketPassRate),
-	contributors: ["doit", "ntpc"],
+	source: "衛生福利部食品藥物管理署 食品中毒發生狀況（每年）",
+	links: ["https://www.fda.gov.tw/TC/site.aspx?sid=4"],
+	contributors: ["mohw"],
 	update_freq: 1,
-	update_freq_unit: "month",
+	update_freq_unit: "year",
 	short_desc:
-		"雙北市場食材抽驗合格率時間序列（蔬果/肉品/水產/加工食品），對比全國平均。資料目錄來源：Open Data.json、dataList.json。",
+		"月份模式：選年份查看當月患者數；年份模式：以5年為一區間瀏覽民國90-114年各病因患者數占年度患者數比例。",
 };
 
 // =============================================================
@@ -402,7 +388,7 @@ const compRisk = {
 export const foodSafetyComponents = [
 	compMap,
 	compRank,
-	compMarket,
+	compPoisoningCases,
 	compRisk,
 ];
 
