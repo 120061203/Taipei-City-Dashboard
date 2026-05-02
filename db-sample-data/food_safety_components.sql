@@ -20,6 +20,9 @@ ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
 INSERT INTO components (index, name) VALUES ('district_food_risk', '行政區食安風險指數')
 ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
 
+INSERT INTO components (index, name) VALUES ('foodborne_illness_trend', '食品中毒事件趨勢')
+ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
+
 -- component_charts
 INSERT INTO component_charts (index, color, types, unit)
 VALUES (
@@ -47,6 +50,16 @@ VALUES (
     ARRAY['#ed5a5a'],
     ARRAY['DistrictChart','BarChart'],
     '指數'
+)
+ON CONFLICT (index) DO UPDATE
+    SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
+
+INSERT INTO component_charts (index, color, types, unit)
+VALUES (
+    'foodborne_illness_trend',
+    ARRAY['#5a9cf8'],
+    ARRAY['TimelineSeparateChart'],
+    '人'
 )
 ON CONFLICT (index) DO UPDATE
     SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
@@ -118,6 +131,28 @@ INSERT INTO query_charts (
     'taipei'
 );
 
+DELETE FROM query_charts WHERE index = 'foodborne_illness_trend';
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'foodborne_illness_trend', NULL, NULL, NULL,
+    'static', NULL, 1, 'year',
+    '顯示臺北市歷年食品中毒人數趨勢，資料來源為年度食品衛生管理工作統計。',
+    '顯示臺北市食品衛生管理工作統計中的年度食品中毒人數。折線圖以最近 12 筆有食品中毒人數的年份呈現，數值為該年度統計人數，可用於觀察長期變化與異常年度。',
+    '臺北市政府主計處',
+    '可用於觀察食品中毒人數年度變化，搭配稽查、不合格改善及其他食安組件判讀食安管理重點。',
+    ARRAY['https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=5900&kind=21&type=0&funid=a05031801&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'time',
+    'SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis, ''食品中毒人數'' AS y_axis, food_poisoning_people::float AS data FROM (SELECT year, food_poisoning_people FROM food_hygiene_work WHERE food_poisoning_people > 0 ORDER BY year DESC LIMIT 12) sub ORDER BY year',
+    NULL,
+    'taipei'
+);
+
 -- dashboard & group assignment
 DO $$
 DECLARE comp_ids INTEGER[]; dash_id INTEGER;
@@ -126,12 +161,14 @@ BEGIN
             WHEN 'food_inspection_failures' THEN 1
             WHEN 'food_grade_rank' THEN 2
             WHEN 'district_food_risk' THEN 3
+            WHEN 'foodborne_illness_trend' THEN 4
             ELSE 99
         END) INTO comp_ids
     FROM components WHERE index IN (
         'food_inspection_failures',
         'food_grade_rank',
-        'district_food_risk'
+        'district_food_risk',
+        'foodborne_illness_trend'
     );
     INSERT INTO dashboards (index, name, components, icon, created_at, updated_at)
     VALUES ('food_safety_metrotpe', '食安守護', comp_ids, 'restaurant', NOW(), NOW())
