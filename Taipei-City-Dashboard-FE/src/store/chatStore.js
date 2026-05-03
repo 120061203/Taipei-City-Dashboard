@@ -43,47 +43,6 @@ const FOOD_SAFETY_COMPONENT_MATCHERS = [
 	},
 ];
 
-const FOOD_SAFETY_PREVIEW_CONFIGS = {
-	food_inspection_failures: {
-		color: ["#ed5a5a", "#f0883e", "#eac54f", "#5a9cf8", "#7ee787", "#d2a8ff"],
-		types: ["BarChart", "DonutChart"],
-		unit: "件",
-		height: 150,
-		compact: true,
-		barLimit: 5,
-		donutSize: "74%",
-		donutOffsetY: 0,
-		donutDataLabelOffset: 8,
-		categories: null,
-	},
-	food_grade_rank: {
-		color: ["#7ee787", "#5a9cf8", "#eac54f"],
-		types: ["BarChart", "ColumnChart"],
-		unit: "家",
-		height: 150,
-		compact: true,
-		barLimit: 5,
-		categories: null,
-	},
-	foodborne_illness_trend: {
-		color: ["#ed5a5a", "#f0883e", "#eac54f", "#5a9cf8", "#7ee787", "#d2a8ff"],
-		types: ["FoodPoisoningYearlyChart"],
-		unit: "人",
-		height: 150,
-		compact: true,
-		categories: null,
-	},
-	district_food_risk: {
-		color: ["#ed5a5a"],
-		types: ["DistrictChart", "BarChart"],
-		unit: "指數",
-		height: 150,
-		compact: true,
-		barLimit: 6,
-		categories: null,
-	},
-};
-
 export const useChatStore = defineStore('chat', () => {
   	// 預設訊息
   	const defaultChatData = [
@@ -264,8 +223,10 @@ export const useChatStore = defineStore('chat', () => {
 			const response = await http.get(`/component/${primary.id}/chart`, {
 				params: { city: primary.city || "metrotaipei" },
 			});
-			const rows = normalizeFoodSafetyChartRows(response.data?.data);
+			const chartData = response.data?.data;
+			const rows = normalizeFoodSafetyChartRows(chartData);
 			if (!rows.length) return null;
+			const previewConfig = await buildFoodSafetyPreviewConfig(primary, chartData, response.data?.categories);
 
 			return {
 				componentId: primary.id,
@@ -276,7 +237,7 @@ export const useChatStore = defineStore('chat', () => {
 				summary: buildFoodSafetyComponentSummary(primary.index, rows),
 				columns: buildFoodSafetyComponentColumns(primary.index),
 				rows: rows.slice(0, 8),
-				previewConfig: buildFoodSafetyPreviewConfig(primary, response.data?.data),
+				previewConfig,
 			};
 		} catch (error) {
 			console.error("FoodSafetyComponentDataError :", error);
@@ -284,31 +245,34 @@ export const useChatStore = defineStore('chat', () => {
 		}
 	};
 
-	const buildFoodSafetyPreviewConfig = (component, chartData = []) => {
-		const chartConfig = FOOD_SAFETY_PREVIEW_CONFIGS[component.index];
-		if (!chartConfig) return null;
+	const getDashboardComponentConfig = async(component) => {
+		try {
+			const response = await http.get("/dashboard/food_safety_taipei");
+			const components = response.data?.data || [];
+			const city = component.city || "metrotaipei";
+			return components.find((item) =>
+				item.index === component.index && item.city === city
+			) || components.find((item) => item.index === component.index);
+		} catch (error) {
+			console.error("FoodSafetyDashboardComponentConfigError :", error);
+			return null;
+		}
+	};
 
-		return {
-			id: component.id,
-			index: component.index,
-			name: component.name,
-			city: component.city || "metrotaipei",
-			chart_config: chartConfig,
-			chart_data: chartData,
-			map_config: null,
-			map_filter: null,
-			history_config: null,
-			source: "臺北市衛生局",
-			links: null,
-			contributors: [],
-			update_freq: 1,
-			update_freq_unit: "year",
-			time_from: "static",
-			time_to: "static",
-			short_desc: "",
-			long_desc: "",
-			use_case: "",
-		};
+	const buildFoodSafetyPreviewConfig = async(component, chartData = [], categories = null) => {
+		const dashboardComponent = await getDashboardComponentConfig(component);
+		if (!dashboardComponent) return null;
+
+		const previewConfig = JSON.parse(JSON.stringify(dashboardComponent));
+		previewConfig.chart_data = chartData;
+		if (categories) {
+			previewConfig.chart_config = {
+				...previewConfig.chart_config,
+				categories,
+			};
+		}
+
+		return previewConfig;
 	};
 
 	const normalizeFoodSafetyChartRows = (chartData = []) => {

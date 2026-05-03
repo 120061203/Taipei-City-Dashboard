@@ -118,6 +118,20 @@ CREATE TABLE IF NOT EXISTS food_check_work (
 );
 TRUNCATE TABLE food_check_work RESTART IDENTITY;
 
+CREATE TABLE IF NOT EXISTS vendor_enforcement_ntpc (
+    id            SERIAL PRIMARY KEY,
+    city          TEXT,
+    source_file   TEXT,
+    year          INTEGER,
+    month         INTEGER,
+    organ         TEXT,
+    district      TEXT,
+    kind          TEXT,
+    number        INTEGER,
+    num_of_people INTEGER
+);
+TRUNCATE TABLE vendor_enforcement_ntpc RESTART IDENTITY;
+
 CREATE TABLE IF NOT EXISTS district_food_risk (
     x_axis TEXT PRIMARY KEY,
     data NUMERIC(6,2)

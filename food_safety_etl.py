@@ -77,6 +77,24 @@ TAIPEI_DISTRICT_CODE_SUFFIX = {
     "0120": "北投區",
 }
 
+NTPC_PRECINCT_DISTRICT_MAP = {
+    "板橋分局": "板橋區",
+    "海山分局": "板橋區",
+    "中和分局": "中和區",
+    "永和分局": "永和區",
+    "新莊分局": "新莊區",
+    "三重分局": "三重區",
+    "蘆洲分局": "蘆洲區",
+    "新店分局": "新店區",
+    "土城分局": "土城區",
+    "樹林分局": "樹林區",
+    "汐止分局": "汐止區",
+    "淡水分局": "淡水區",
+    "瑞芳分局": "瑞芳區",
+    "金山分局": "金山區",
+    "林口分局": "林口區",
+}
+
 FOOD_SAFETY_TARGETS = [
     {
         "key": "taipei_inspection_failures",
@@ -587,6 +605,29 @@ def normalize_food_hygiene_work(raw_rows: list[dict[str, str]]) -> list[dict[str
     return output
 
 
+def normalize_ntpc_vendor_enforcement(raw_rows: list[dict[str, str]]) -> list[dict[str, Any]]:
+    output = []
+    for row in raw_rows:
+        organ = (row.get("organ") or "").replace("新北市", "").strip()
+        district = NTPC_PRECINCT_DISTRICT_MAP.get(organ)
+        if not district and organ.endswith("分局"):
+            district = organ.replace("分局", "區")
+        output.append(
+            {
+                "city": "ntpc",
+                "source_file": row.get("_source_file") or None,
+                "year": to_int(row.get("year")),
+                "month": to_int(row.get("months")),
+                "organ": organ or None,
+                "district": district or organ or None,
+                "kind": row.get("kind") or None,
+                "number": to_int(row.get("number")),
+                "num_of_people": to_int(row.get("numofpeople")),
+            }
+        )
+    return output
+
+
 NORMALIZERS = {
     "taipei_inspection_failures": normalize_inspection_failures,
     "taipei_hygiene_grade": normalize_hygiene_grade,
@@ -864,6 +905,11 @@ def _create_normalized_tables(normalized: dict[str, list[dict[str, Any]]], dashb
          "reason_counts", "transferred_unclosed"],
         normalized.get("taipei_food_check_work", []),
     ))
+    stmts.append(_insert_rows(
+        "vendor_enforcement_ntpc",
+        ["city", "source_file", "year", "month", "organ", "district", "kind", "number", "num_of_people"],
+        normalized.get("ntpc_vendor_enforcement", []),
+    ))
 
     # district_food_risk rows are computed — insert dynamically
     for row in sorted(dashboards["district_food_risk"]["by_district"], key=lambda r: -r["risk_score"]):
@@ -920,6 +966,18 @@ def run_etl(
         rows = normalizer(raw_rows)
         normalized[target["key"]] = rows
         write_json(normalized_dir / f"{target['key']}.json", rows)
+
+    ntpc_vendor_path = REPO_ROOT / "新北市取締攤販績效.csv"
+    if ntpc_vendor_path.exists():
+        ntpc_raw_rows, ntpc_encoding = read_csv_rows(ntpc_vendor_path)
+        for row in ntpc_raw_rows:
+            row["_source_file"] = ntpc_vendor_path.name
+        raw_sources["ntpc_vendor_enforcement"] = [
+            {"file": ntpc_vendor_path.name, "encoding": ntpc_encoding, "rows": len(ntpc_raw_rows)}
+        ]
+        ntpc_rows = normalize_ntpc_vendor_enforcement(ntpc_raw_rows)
+        normalized["ntpc_vendor_enforcement"] = ntpc_rows
+        write_json(normalized_dir / "ntpc_vendor_enforcement.json", ntpc_rows)
 
     write_json(output_dir / "catalog_inventory.json", inventory)
 

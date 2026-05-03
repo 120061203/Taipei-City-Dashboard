@@ -89,6 +89,13 @@ const openShareComponent = (chat) => {
 	});
 };
 
+const getPreviewCityTags = (config) => {
+	if (!config) return [];
+	return config.city_tag_override
+		? contentStore.cityManager.getCities(config.city_tag_override)
+		: contentStore.cityManager.getTagList(config.city);
+};
+
 watch(
 	() => chatData.value.length,
 	async () => {
@@ -161,6 +168,8 @@ watch(
                 mode="default"
                 :footer="false"
                 :active-city="chat.componentData.previewConfig.city"
+                :city-tag="getPreviewCityTags(chat.componentData.previewConfig)"
+                :initial-chart="chat.componentData.previewConfig.chart_config?.types?.[0]"
                 :toggle-on="false"
               />
             </div>
