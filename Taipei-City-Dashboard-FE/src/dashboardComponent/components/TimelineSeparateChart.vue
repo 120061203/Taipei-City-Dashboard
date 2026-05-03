@@ -115,12 +115,27 @@ watch(
 
 		// 跨度超過三年改成年份類別
 		if (newDiff >= 3 * 31536000000) {
+			// 先把所有系列的 x 轉成年份字串
 			localSeries.value.forEach((item) => {
 				item.data = item.data.map((a) => ({
 					...a,
 					x: a.x.slice(0, 4),
 				}));
 			});
+
+			// 收集所有系列的所有年份，補齊缺少的年份為 null
+			// 確保 ApexCharts 以 x 值對齊，而非索引位置
+			const allYears = [...new Set(
+				localSeries.value.flatMap((s) => s.data.map((d) => d.x))
+			)].sort();
+			localSeries.value.forEach((item) => {
+				const yearMap = new Map(item.data.map((d) => [d.x, d.y]));
+				item.data = allYears.map((year) => ({
+					x: year,
+					y: yearMap.has(year) ? yearMap.get(year) : null,
+				}));
+			});
+
 			chartOptions.value = {
 				...chartOptions.value,
 				xaxis: {
