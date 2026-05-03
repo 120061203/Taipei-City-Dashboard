@@ -57,7 +57,7 @@ ON CONFLICT (index) DO UPDATE
 INSERT INTO component_charts (index, color, types, unit)
 VALUES (
     'foodborne_illness_trend',
-    ARRAY['#5a9cf8'],
+    ARRAY['#5a9cf8','#f97316'],
     ARRAY['TimelineSeparateChart'],
     '人'
 )
