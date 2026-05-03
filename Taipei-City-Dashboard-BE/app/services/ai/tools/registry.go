@@ -119,25 +119,37 @@ func GetFoodSafetyTableData(ctx context.Context, args string) (string, error) {
 		return getFoodPoisoningSummary(ctx, params.Query)
 	case "district_food_risk":
 		return getDistrictRiskSummary(ctx)
+	case "inspection_enforcement_trend":
+		return getInspectionEnforcementSummary(ctx, params.Query)
+	case "market_quality_distribution":
+		return getMarketQualitySummary(ctx)
 	default:
 		inspection, _ := getInspectionFailuresSummary(ctx)
 		grade, _ := getFoodGradeSummary(ctx)
 		poisoning, _ := getFoodPoisoningSummary(ctx, params.Query)
 		risk, _ := getDistrictRiskSummary(ctx)
-		return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s", inspection, grade, poisoning, risk), nil
+		enforcement, _ := getInspectionEnforcementSummary(ctx, params.Query)
+		market, _ := getMarketQualitySummary(ctx)
+		return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s", inspection, grade, poisoning, risk, enforcement, market), nil
 	}
 }
 
 func pickFoodSafetyComponent(componentIndex, query string) string {
 	allowed := map[string]bool{
-		"food_inspection_failures": true,
-		"food_grade_rank":          true,
-		"foodborne_illness_trend":  true,
-		"district_food_risk":       true,
+		"food_inspection_failures":     true,
+		"food_grade_rank":              true,
+		"foodborne_illness_trend":      true,
+		"district_food_risk":           true,
+		"inspection_enforcement_trend": true,
+		"market_quality_distribution":  true,
 	}
 
 	q := strings.ToLower(query)
 	switch {
+	case strings.Contains(q, "執法") || strings.Contains(q, "稽查") || strings.Contains(q, "取締") || strings.Contains(q, "工作量") || strings.Contains(q, "enforcement"):
+		return "inspection_enforcement_trend"
+	case strings.Contains(q, "優良市集") || strings.Contains(q, "市集") || strings.Contains(q, "市場") || strings.Contains(q, "星等") || strings.Contains(q, "market"):
+		return "market_quality_distribution"
 	case strings.Contains(q, "中毒") || strings.Contains(q, "病因") || strings.Contains(q, "患者") || strings.Contains(q, "foodborne"):
 		return "foodborne_illness_trend"
 	case strings.Contains(q, "分級") || strings.Contains(q, "評核") || strings.Contains(q, "安心") || strings.Contains(q, "餐廳") || strings.Contains(q, "food_grade"):
@@ -313,16 +325,24 @@ func getFoodPoisoningSummary(ctx context.Context, query string) (string, error) 
 }
 
 func extractROCYear(query string) int {
-	re := regexp.MustCompile(`(?:民國)?\s*(\d{2,3})\s*年`)
+	_, rocYear := extractADAndROCYear(query)
+	return rocYear
+}
+
+func extractADAndROCYear(query string) (int, int) {
+	re := regexp.MustCompile(`(?:民國)?\s*(\d{2,4})\s*年`)
 	matches := re.FindStringSubmatch(query)
 	if len(matches) < 2 {
-		return 0
+		return 0, 0
 	}
 	year, err := strconv.Atoi(matches[1])
 	if err != nil {
-		return 0
+		return 0, 0
 	}
-	return year
+	if year >= 1912 {
+		return year, year - 1911
+	}
+	return year + 1911, year
 }
 
 func getDistrictRiskSummary(ctx context.Context) (string, error) {
@@ -341,6 +361,146 @@ func getDistrictRiskSummary(ctx context.Context) (string, error) {
 	payload := map[string]interface{}{
 		"table":              "行政區食安風險指數",
 		"top_risk_districts": topRisk,
+	}
+	return marshalToolPayload(payload)
+}
+
+func getInspectionEnforcementSummary(ctx context.Context, query string) (string, error) {
+	targetADYear, targetROCYear := extractADAndROCYear(query)
+
+	var taipei struct {
+		Year  int `json:"year" gorm:"column:year"`
+		Total int `json:"total" gorm:"column:total"`
+	}
+	taipeiSQL := `
+		SELECT year, inspection_visits AS total
+		FROM food_hygiene_work
+		WHERE city = 'taipei' AND inspection_visits IS NOT NULL
+	`
+	taipeiArgs := []interface{}{}
+	if targetADYear > 0 {
+		taipeiSQL += "AND year = ? "
+		taipeiArgs = append(taipeiArgs, targetADYear)
+	}
+	taipeiSQL += "ORDER BY year DESC LIMIT 1"
+	if err := models.DBDashboard.WithContext(ctx).Raw(taipeiSQL, taipeiArgs...).Scan(&taipei).Error; err != nil {
+		return "", err
+	}
+
+	var ntpc struct {
+		Year  int `json:"year" gorm:"column:year"`
+		Total int `json:"total" gorm:"column:total"`
+	}
+	ntpcSQL := `
+		SELECT year, SUM(number)::integer AS total
+		FROM vendor_enforcement_ntpc
+		WHERE kind = '總計'
+		  AND organ <> '政府警察局'
+	`
+	ntpcArgs := []interface{}{}
+	if targetROCYear > 0 {
+		ntpcSQL += "AND year = ? "
+		ntpcArgs = append(ntpcArgs, targetROCYear)
+	}
+	ntpcSQL += `
+		GROUP BY year
+		ORDER BY year DESC
+		LIMIT 1
+	`
+	if err := models.DBDashboard.WithContext(ctx).Raw(ntpcSQL, ntpcArgs...).Scan(&ntpc).Error; err != nil {
+		return "", err
+	}
+	if targetADYear > 0 && taipei.Year == 0 && ntpc.Year == 0 {
+		return "", fmt.Errorf("找不到 %d 年雙北食安執法工作量資料", targetADYear)
+	}
+
+	topDistrictYear := ntpc.Year
+	if topDistrictYear == 0 {
+		topDistrictYear = targetROCYear
+	}
+
+	var topNTPCDistricts []struct {
+		District string `json:"district" gorm:"column:district"`
+		Total    int    `json:"total" gorm:"column:total"`
+	}
+	topDistrictSQL := `
+		SELECT district, SUM(number)::integer AS total
+		FROM vendor_enforcement_ntpc
+		WHERE kind = '總計'
+		  AND organ <> '政府警察局'
+		  AND district IS NOT NULL
+	`
+	topDistrictArgs := []interface{}{}
+	if topDistrictYear > 0 {
+		topDistrictSQL += "AND year = ? "
+		topDistrictArgs = append(topDistrictArgs, topDistrictYear)
+	} else {
+		topDistrictSQL += "AND year = (SELECT MAX(year) FROM vendor_enforcement_ntpc) "
+	}
+	topDistrictSQL += `
+		GROUP BY district
+		ORDER BY total DESC
+		LIMIT 5
+	`
+	if err := models.DBDashboard.WithContext(ctx).Raw(topDistrictSQL, topDistrictArgs...).Scan(&topNTPCDistricts).Error; err != nil {
+		return "", err
+	}
+
+	payload := map[string]interface{}{
+		"table":              "雙北食安執法工作量趨勢",
+		"requested_year":     targetADYear,
+		"taipei":             taipei,
+		"new_taipei":         ntpc,
+		"top_ntpc_districts": topNTPCDistricts,
+	}
+	return marshalToolPayload(payload)
+}
+
+func getMarketQualitySummary(ctx context.Context) (string, error) {
+	var latestYear struct {
+		Year int `json:"year" gorm:"column:year"`
+	}
+	if err := models.DBDashboard.WithContext(ctx).Raw(`
+		SELECT MAX(year) AS year
+		FROM market_quality_awards
+	`).Scan(&latestYear).Error; err != nil {
+		return "", err
+	}
+
+	var topDistricts []struct {
+		District string `json:"district" gorm:"column:district"`
+		Count    int    `json:"count" gorm:"column:count"`
+	}
+	if err := models.DBDashboard.WithContext(ctx).Raw(`
+		SELECT district, COUNT(*)::integer AS count
+		FROM market_quality_awards
+		WHERE year = ? AND district IS NOT NULL
+		GROUP BY district
+		ORDER BY count DESC
+		LIMIT 5
+	`, latestYear.Year).Scan(&topDistricts).Error; err != nil {
+		return "", err
+	}
+
+	var byCity []struct {
+		City  string `json:"city" gorm:"column:city"`
+		Count int    `json:"count" gorm:"column:count"`
+	}
+	if err := models.DBDashboard.WithContext(ctx).Raw(`
+		SELECT city, COUNT(*)::integer AS count
+		FROM market_quality_awards
+		WHERE year = ?
+		GROUP BY city
+		ORDER BY city
+	`, latestYear.Year).Scan(&byCity).Error; err != nil {
+		return "", err
+	}
+
+	payload := map[string]interface{}{
+		"table":         "雙北優良市集星等分布",
+		"latest_year":   latestYear.Year,
+		"by_city":       byCity,
+		"top_districts": topDistricts,
 	}
 	return marshalToolPayload(payload)
 }

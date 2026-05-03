@@ -102,6 +102,21 @@ INSERT INTO query_charts (
     NULL,
     'taipei'
 );
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+)
+SELECT
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    NOW(), NOW(), query_type, query_chart, query_history, 'metrotaipei'
+FROM query_charts
+WHERE index = 'food_inspection_failures' AND city = 'taipei';
 
 DELETE FROM query_charts WHERE index = 'food_grade_rank';
 INSERT INTO query_charts (
@@ -124,6 +139,21 @@ INSERT INTO query_charts (
     NULL,
     'taipei'
 );
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+)
+SELECT
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    NOW(), NOW(), query_type, query_chart, query_history, 'metrotaipei'
+FROM query_charts
+WHERE index = 'food_grade_rank' AND city = 'taipei';
 
 DELETE FROM query_charts WHERE index = 'district_food_risk';
 INSERT INTO query_charts (
@@ -360,7 +390,8 @@ INSERT INTO query_charts (
          ''新北市取締件數'' AS y_axis,
          SUM(number)::float AS data
   FROM vendor_enforcement_ntpc
-  WHERE district NOT LIKE ''%總%''
+  WHERE kind = ''總計''
+    AND organ <> ''政府警察局''
   GROUP BY year
 ) combined ORDER BY x_axis',
     NULL, 'metrotaipei'
@@ -396,6 +427,6 @@ BEGIN
             updated_at = NOW()
     RETURNING id INTO dash_id;
     INSERT INTO dashboard_groups (dashboard_id, group_id)
-    SELECT dash_id, id FROM groups WHERE name = 'taipei'
+    SELECT dash_id, id FROM groups WHERE name = 'metrotaipei'
     ON CONFLICT DO NOTHING;
 END$$;
