@@ -3,9 +3,9 @@
 
 -- Clean up old dashboard/group assignments from earlier ETL versions.
 DELETE FROM dashboard_groups WHERE dashboard_id IN (
-    SELECT id FROM dashboards WHERE index IN ('food_safety_taipei', 'food_safety_metrotpe')
+    SELECT id FROM dashboards WHERE index IN ('food_safety_taipei', 'food_safety_metrotpe', 'food_safety_metrotaipei')
 );
-DELETE FROM dashboards WHERE index IN ('food_safety_taipei', 'food_safety_metrotpe');
+DELETE FROM dashboards WHERE index IN ('food_safety_taipei', 'food_safety_metrotpe', 'food_safety_metrotaipei');
 DELETE FROM query_charts WHERE index = 'food_inspection_category_risk';
 DELETE FROM component_charts WHERE index = 'food_inspection_category_risk';
 DELETE FROM components WHERE index = 'food_inspection_category_risk';
@@ -103,6 +103,28 @@ INSERT INTO query_charts (
     'taipei'
 );
 
+-- food_inspection_failures metrotaipei（目前僅有臺北資料）
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'food_inspection_failures', NULL, NULL, NULL,
+    'static', NULL, 1, 'year',
+    '顯示臺北市食品抽驗不合格紀錄中，食材大類與具體品項的不合格件數（目前僅有臺北市資料）。',
+    '顯示臺北市食品抽驗不合格清冊中，依檢體名稱歸納出的食材大類與各大類下的具體品項。大類包含香辛植物、葉菜類、水果類、根莖類、豆製穀堅果類、瓜果豆菜類、菇蕈乾貨類、茶葉花草類、肉蛋水產類等；分類依檢體名稱文字規則產生，無法歸類的品項不列入圖表，數值為清冊中的不合格紀錄筆數。',
+    '臺北市政府衛生局',
+    '先比較食材大類在不合格紀錄中的件數，再切入該類別下的具體食材品項排行。',
+    ARRAY['https://data.taipei/dataset/detail?id=09a917a0-0fb5-47e1-957c-5f1268fba517'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'two_d',
+    'WITH normalized AS (SELECT CASE WHEN sample_name ~ ''烘焙紙|料理紙|調理紙|美耐皿|水壺|矽膠|洗潔精|杯|餐具|容器|塑膠|紙杯|湯匙|盤|碗|抹布'' THEN ''餐具包材類'' WHEN sample_name ~ ''茶|菊花|蝶豆花|花草|迷迭香|咖哩葉|九里香|香草|番茶'' THEN ''茶葉花草類'' WHEN sample_name ~ ''含冰塊|冰|綠豆沙|飲料|咖啡|水晶|雪花冰|果汁|奶茶|紅茶|青茶'' THEN ''飲品冰品類'' WHEN sample_name ~ ''醬油|咖哩|奶油|鮮奶油|奶精|花生醬|調味|香料|花椒|辣椒粉|醬|乳瑪琳'' THEN ''調味醬料類'' WHEN sample_name ~ ''青江菜|小白菜|菠菜|茼蒿|油菜|白菜|芥菜|刈菜|萵苣|大陸妹|空心菜|地瓜葉|高麗菜|韭菜|韭黃|芥藍|芥蘭|莧菜|龍鬚菜|紅鳳菜|青花菜|花椰菜|葉菜'' THEN ''葉菜類'' WHEN sample_name ~ ''芫荽|香菜|青蔥|蔥|九層塔|羅勒|芹菜|辣椒|蒜|薑|香辛'' THEN ''香辛植物'' WHEN sample_name ~ ''蘿蔔|馬鈴薯|芋|地瓜|山藥|竹筍|洋蔥|蓮藕|百合|根莖'' THEN ''根莖類'' WHEN sample_name ~ ''草莓|莓|百香果|葡萄|芒果|柑|橘|蘋果|梨|李|桃|香蕉|荔枝|龍眼|木瓜|檸檬|波蘿蜜|玉荷包|橄欖|水果|八仙果'' THEN ''水果類'' WHEN sample_name ~ ''茄子|豌豆|敏豆|菜豆|四季豆|南瓜|苦瓜|絲瓜|胡瓜|瓜|豆苗'' THEN ''瓜果豆菜類'' WHEN sample_name ~ ''木耳|香菇|菇|竹笙|金針|筍干|乾貨|乾'' THEN ''菇蕈乾貨類'' WHEN sample_name ~ ''豆干|豆乾|干絲|豆腐|豆皮|豆製|綠豆|毛綠豆|花生|堅果|芝麻'' THEN ''豆製穀堅果類'' WHEN sample_name ~ ''魚|蝦|貝|蟹|海鮮|水產|豬|雞|牛|羊|肉|蛋|鵝'' THEN ''肉蛋水產類'' ELSE ''其他'' END AS food_group, CASE WHEN sample_name ~ ''蘿蔔'' THEN ''白蘿蔔'' WHEN sample_name ~ ''芫荽|香菜'' THEN ''香菜/芫荽'' WHEN sample_name ~ ''九層塔|羅勒'' THEN ''九層塔/羅勒'' WHEN sample_name ~ ''辣椒'' THEN ''辣椒'' WHEN sample_name ~ ''草莓|莓果'' THEN ''草莓/莓果'' WHEN sample_name ~ ''青蔥|^蔥$'' THEN ''青蔥'' WHEN sample_name ~ ''芹菜'' THEN ''芹菜'' ELSE btrim(regexp_replace(sample_name, ''[（(].*?[）)]'', '''', ''g'')) END AS food_item FROM food_inspection_failures WHERE sample_name IS NOT NULL AND btrim(sample_name) <> ''''), classified AS (SELECT food_group, food_item FROM normalized WHERE food_group NOT IN (''其他'', ''餐具包材類'') AND food_item IS NOT NULL AND btrim(food_item) <> ''''), category_totals AS (SELECT food_group || ''｜__total__'' AS x_axis, COUNT(*)::integer AS data, food_group, 0 AS sort_order, COUNT(*)::integer AS sort_count FROM classified GROUP BY food_group), item_counts AS (SELECT food_group, food_item, COUNT(*)::integer AS data FROM classified GROUP BY food_group, food_item) SELECT x_axis, data FROM (SELECT x_axis, data, food_group, sort_order, sort_count FROM category_totals UNION ALL SELECT food_group || ''｜'' || food_item AS x_axis, data, food_group, 1 AS sort_order, data AS sort_count FROM item_counts) output ORDER BY food_group, sort_order, sort_count DESC, x_axis',
+    NULL,
+    'metrotaipei'
+);
+
 DELETE FROM query_charts WHERE index = 'food_grade_rank';
 INSERT INTO query_charts (
     index, history_config, map_config_ids, map_filter,
@@ -123,6 +145,28 @@ INSERT INTO query_charts (
     'SELECT district AS x_axis, COUNT(*)::integer AS data FROM food_hygiene_grade WHERE district IS NOT NULL AND grade = ''優'' GROUP BY district ORDER BY data DESC, district LIMIT 10',
     NULL,
     'taipei'
+);
+
+-- food_grade_rank metrotaipei（目前僅有臺北資料）
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'food_grade_rank', NULL, NULL, NULL,
+    'static', NULL, 1, 'year',
+    '顯示臺北市餐飲衛生管理分級評核優級店家數，依行政區統計（目前僅有臺北市資料）。',
+    '顯示臺北市通過餐飲衛生管理分級評核且評核結果為優級的業者數，依行政區彙整。資料來源為臺北市政府衛生局公開名冊，反映各行政區已通過分級評核的餐飲店家分布。',
+    '臺北市政府衛生局',
+    '選擇外食區域時，可查看各行政區優級評核店家的分布情形，再搭配公開名冊查詢店名與地址。',
+    ARRAY['https://data.taipei/dataset/detail?id=59579c19-a561-4564-8c0f-545bfb32c0f6','https://data.taipei/dataset/detail?id=bb665f7f-085c-40f9-9b9a-844e46da9c65'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'two_d',
+    'SELECT district AS x_axis, COUNT(*)::integer AS data FROM food_hygiene_grade WHERE district IS NOT NULL AND grade = ''優'' GROUP BY district ORDER BY data DESC, district LIMIT 10',
+    NULL,
+    'metrotaipei'
 );
 
 DELETE FROM query_charts WHERE index = 'district_food_risk';
@@ -203,7 +247,7 @@ INSERT INTO query_charts (
     ARRAY['https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=5900&kind=21&type=0&funid=a05031801&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1'],
     ARRAY['doit'],
     NOW(), NOW(), 'time',
-    'SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis, ''食品中毒人數'' AS y_axis, food_poisoning_people::float AS data FROM (SELECT year, food_poisoning_people FROM food_hygiene_work WHERE city = ''taipei'' AND food_poisoning_people > 0 ORDER BY year DESC LIMIT 12) sub ORDER BY year',
+    'SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis, ''食品中毒人數'' AS y_axis, food_poisoning_people::float AS data FROM (SELECT year, food_poisoning_people FROM food_hygiene_work WHERE city = ''臺北市'' AND food_poisoning_people > 0 ORDER BY year DESC LIMIT 12) sub ORDER BY year',
     NULL,
     'taipei'
 );
@@ -230,7 +274,7 @@ INSERT INTO query_charts (
          food_poisoning_people::float AS data,
          year
   FROM (SELECT year, food_poisoning_people FROM food_hygiene_work
-        WHERE city = ''taipei'' AND food_poisoning_people > 0
+        WHERE city = ''臺北市'' AND food_poisoning_people > 0
         ORDER BY year DESC LIMIT 12) tp
   UNION ALL
   SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis,
@@ -329,7 +373,7 @@ INSERT INTO query_charts (
     ARRAY['https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=5900&kind=21&type=0&funid=a05031801&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1'],
     ARRAY['doit'],
     NOW(), NOW(), 'time',
-    'SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis, ''臺北市稽查次數'' AS y_axis, inspection_visits::float AS data FROM food_hygiene_work WHERE city = ''taipei'' AND inspection_visits IS NOT NULL ORDER BY year',
+    'SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis, ''臺北市稽查次數'' AS y_axis, inspection_visits::float AS data FROM food_hygiene_work WHERE city = ''臺北市'' AND inspection_visits IS NOT NULL ORDER BY year',
     NULL, 'taipei'
 );
 
@@ -354,7 +398,7 @@ INSERT INTO query_charts (
          ''臺北市稽查次數'' AS y_axis,
          inspection_visits::float AS data
   FROM food_hygiene_work
-  WHERE city = ''taipei'' AND inspection_visits IS NOT NULL
+  WHERE city = ''臺北市'' AND inspection_visits IS NOT NULL
   UNION ALL
   SELECT make_timestamptz(year::integer + 1911, 7, 1, 0, 0, 0, ''UTC'') AS x_axis,
          ''新北市取締件數'' AS y_axis,
@@ -366,7 +410,17 @@ INSERT INTO query_charts (
     NULL, 'metrotaipei'
 );
 
--- dashboard & group assignment
+-- 只保留雙北儀表板，移除所有 taipei city 的 query_charts
+DELETE FROM query_charts WHERE index IN (
+    'food_inspection_failures',
+    'food_grade_rank',
+    'district_food_risk',
+    'foodborne_illness_trend',
+    'inspection_enforcement_trend',
+    'market_quality_distribution'
+) AND city = 'taipei';
+
+-- dashboard & group assignment（僅雙北儀表板）
 DO $$
 DECLARE comp_ids INTEGER[]; dash_id INTEGER;
 BEGIN
@@ -387,8 +441,9 @@ BEGIN
         'inspection_enforcement_trend',
         'market_quality_distribution'
     );
+    -- 雙北儀表板（唯一的食安守護儀表板）
     INSERT INTO dashboards (index, name, components, icon, created_at, updated_at)
-    VALUES ('food_safety_taipei', '食安守護', comp_ids, 'restaurant', NOW(), NOW())
+    VALUES ('food_safety_metrotaipei', '食安守護', comp_ids, 'restaurant', NOW(), NOW())
     ON CONFLICT (index) DO UPDATE
         SET name      = EXCLUDED.name,
             components = EXCLUDED.components,
@@ -396,6 +451,6 @@ BEGIN
             updated_at = NOW()
     RETURNING id INTO dash_id;
     INSERT INTO dashboard_groups (dashboard_id, group_id)
-    SELECT dash_id, id FROM groups WHERE name = 'taipei'
+    SELECT dash_id, id FROM groups WHERE name = 'metrotaipei'
     ON CONFLICT DO NOTHING;
 END$$;
