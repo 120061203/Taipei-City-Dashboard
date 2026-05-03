@@ -126,7 +126,7 @@ INSERT INTO query_charts (
     ARRAY['https://data.taipei/dataset/detail?id=09a917a0-0fb5-47e1-957c-5f1268fba517','https://data.taipei/dataset/detail?id=59579c19-a561-4564-8c0f-545bfb32c0f6','https://data.taipei/dataset/detail?id=bb665f7f-085c-40f9-9b9a-844e46da9c65','https://data.taipei/dataset/detail?id=9431f450-57d6-4c23-aca6-0ff50de49f0d','https://data.taipei/dataset/detail?id=c3ae074c-f65f-4f69-bf65-2c00a674e870','https://data.taipei/dataset/detail?id=7d50657f-b35b-496e-b83f-5713893b9a9e'],
     ARRAY['doit'],
     NOW(), NOW(), 'two_d',
-    'SELECT x_axis, data FROM district_food_risk ORDER BY data DESC',
+    'SELECT x_axis, ROUND(data)::float AS data FROM district_food_risk ORDER BY data DESC',
     NULL,
     'taipei'
 );
@@ -156,7 +156,7 @@ INSERT INTO query_charts (
 ),
 ntpc_max AS (SELECT MAX(total) AS m FROM ntpc_raw),
 ntpc_normalized AS (
-    SELECT district AS x_axis, ROUND(total / m * 100, 1)::float AS data
+    SELECT district AS x_axis, ROUND(total / m * 100)::float AS data
     FROM ntpc_raw, ntpc_max
 ),
 taipei AS (
