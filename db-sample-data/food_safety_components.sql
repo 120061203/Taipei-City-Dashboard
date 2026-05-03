@@ -120,7 +120,7 @@ INSERT INTO query_charts (
     'district_food_risk', NULL, NULL, NULL,
     'static', NULL, 1, 'year',
     '顯示臺北市各行政區食品抽驗不合格與餐飲評核資料彙整後的食安風險指數。',
-    '顯示臺北市各行政區食安風險指數。指數以食品抽驗不合格件數與餐飲衛生評核優級比例換算，分數為0至100分，數值越高代表該行政區在資料中累積的不合格紀錄較多或優級比例較低。計算方式為「該區不合格件數／各區最高不合格件數 × 75」加上「非優級比例 × 25」，其中非優級比例為100%減去優級店家比例。',
+    '顯示臺北市各行政區食安風險指數。指數以食品抽驗不合格件數正規化計算，分數為0至100分，數值越高代表該行政區不合格紀錄相對較多。計算方式為「該區不合格件數 ÷ 各區最高不合格件數 × 100」，確保台北與雙北顯示時採用相同量尺。',
     '臺北市政府衛生局',
     '可用於比較行政區間的食品安全管理壓力，作為稽查資源配置、外食環境觀察或跨區比較的參考。',
     ARRAY['https://data.taipei/dataset/detail?id=09a917a0-0fb5-47e1-957c-5f1268fba517','https://data.taipei/dataset/detail?id=59579c19-a561-4564-8c0f-545bfb32c0f6','https://data.taipei/dataset/detail?id=bb665f7f-085c-40f9-9b9a-844e46da9c65','https://data.taipei/dataset/detail?id=9431f450-57d6-4c23-aca6-0ff50de49f0d','https://data.taipei/dataset/detail?id=c3ae074c-f65f-4f69-bf65-2c00a674e870','https://data.taipei/dataset/detail?id=7d50657f-b35b-496e-b83f-5713893b9a9e'],
