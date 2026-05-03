@@ -246,17 +246,31 @@ INSERT INTO query_charts (
 
 ALTER TABLE component_charts ADD COLUMN IF NOT EXISTS categories character varying[];
 
-INSERT INTO component_charts (index, color, types, unit, categories)
+INSERT INTO component_charts (index, color, types, unit)
 VALUES (
     'market_quality_distribution',
-    ARRAY['#5a9cf8','#f97316'],
-    ARRAY['RadarChart'],
-    '家',
-    ARRAY['1★','2★','3★','4★','5★']
+    ARRAY['#f97316'],
+    ARRAY['DistrictChart','BarChart'],
+    '家'
 )
 ON CONFLICT (index) DO UPDATE
-    SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit,
-        categories = EXCLUDED.categories;
+    SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
+
+INSERT INTO component_maps (index, title, type, source, paint, property)
+VALUES (
+    'market_count_taipei', '臺北市優良市集分布', 'fill', 'geojson',
+    '{"fill-color": "#f97316", "fill-opacity": ["interpolate", ["linear"], ["get", "market_count"], 0, 0.05, 11, 0.85]}',
+    '[{"key": "market_count", "name": "優良市集數"}]'
+)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO component_maps (index, title, type, source, paint, property)
+VALUES (
+    'market_count_metro', '雙北優良市集分布', 'fill', 'geojson',
+    '{"fill-color": "#f97316", "fill-opacity": ["interpolate", ["linear"], ["get", "market_count"], 0, 0.05, 11, 0.85]}',
+    '[{"key": "market_count", "name": "優良市集數"}]'
+)
+ON CONFLICT DO NOTHING;
 
 DELETE FROM query_charts WHERE index = 'market_quality_distribution';
 INSERT INTO query_charts (
@@ -266,16 +280,16 @@ INSERT INTO query_charts (
     use_case, links, contributors,
     created_at, updated_at, query_type, query_chart, query_history, city
 ) VALUES (
-    'market_quality_distribution', NULL, NULL, NULL,
+    'market_quality_distribution', NULL, ARRAY[4], NULL,
     'static', NULL, 1, 'year',
-    '顯示臺北市最新年度優良市集各星等獲獎數量雷達圖。',
-    '顯示臺北市優良市集評鑑各星等（1至5星）的獲獎數量，以雷達圖呈現品質結構輪廓。',
+    '顯示臺北市各行政區優良市集數量分布。',
+    '顯示臺北市各行政區優良市集獲獎數量，以地圖色深與條狀圖呈現分布狀況。',
     '臺北市政府',
-    '可用於觀察臺北市優良市集品質等級分布輪廓。',
+    '可用於觀察優良市集在臺北各行政區的分布情形。',
     ARRAY['https://data.taipei/'],
     ARRAY['doit'],
-    NOW(), NOW(), 'three_d',
-    'SELECT grade::text || ''★'' AS x_axis, ''臺北市'' AS y_axis, COUNT(*)::integer AS data FROM market_quality_awards WHERE city = ''taipei'' AND year = (SELECT MAX(year) FROM market_quality_awards WHERE city = ''taipei'') GROUP BY grade ORDER BY grade',
+    NOW(), NOW(), 'two_d',
+    'SELECT district AS x_axis, COUNT(*)::float AS data FROM market_quality_awards WHERE city = ''taipei'' AND year = (SELECT MAX(year) FROM market_quality_awards WHERE city = ''taipei'') AND district IS NOT NULL GROUP BY district ORDER BY data DESC',
     NULL, 'taipei'
 );
 INSERT INTO query_charts (
@@ -285,16 +299,16 @@ INSERT INTO query_charts (
     use_case, links, contributors,
     created_at, updated_at, query_type, query_chart, query_history, city
 ) VALUES (
-    'market_quality_distribution', NULL, NULL, NULL,
+    'market_quality_distribution', NULL, ARRAY[5], NULL,
     'static', NULL, 1, 'year',
-    '雙北113年優良市集星等分布雷達圖對比。',
-    '以雷達圖呈現臺北市與新北市113年（2024年）優良市集各星等（1至5星）獲獎數量，可直覺比較雙北市集品質結構輪廓差異。',
+    '顯示雙北各行政區優良市集數量分布。',
+    '顯示雙北各行政區優良市集獲獎數量，以地圖色深與條狀圖呈現分布狀況，可比較雙北優良市集的地理分布差異。',
     '臺北市政府、經濟部商業發展署',
-    '比較雙北優良市集在不同星等的品質輪廓。',
+    '可用於觀察優良市集在雙北各行政區的分布情形。',
     ARRAY['https://data.taipei/'],
     ARRAY['doit'],
-    NOW(), NOW(), 'three_d',
-    'SELECT grade::text || ''★'' AS x_axis, CASE WHEN city = ''taipei'' THEN ''臺北市'' ELSE ''新北市'' END AS y_axis, COUNT(*)::integer AS data FROM market_quality_awards WHERE year = 2024 GROUP BY city, grade ORDER BY y_axis DESC, grade',
+    NOW(), NOW(), 'two_d',
+    'SELECT district AS x_axis, COUNT(*)::float AS data FROM market_quality_awards WHERE year = 2024 AND district IS NOT NULL GROUP BY district ORDER BY data DESC',
     NULL, 'metrotaipei'
 );
 
