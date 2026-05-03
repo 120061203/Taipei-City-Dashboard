@@ -151,7 +151,9 @@ INSERT INTO food_hygiene_work (city, year, inspection_visits, failed_improvement
 ('taipei', 2022, 62341, 1189, 671),
 ('taipei', 2023, 68902, 1312, 892),
 ('taipei', 2024, 71234, 1401, 945),
-('taipei', 2025, 70821, 1367, 909);
+('taipei', 2025, 70821, 1367, 909),
+-- 新北市113年（2024）食品中毒人數
+('ntpc', 2024, NULL, NULL, 1288);
 
 -- food_hygiene_grade: 臺北市餐飲衛生優級店家（用於 food_grade_rank 柱狀圖）
 INSERT INTO food_hygiene_grade (city, district, business_name, grade) VALUES

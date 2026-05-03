@@ -187,9 +187,45 @@ INSERT INTO query_charts (
     ARRAY['https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=5900&kind=21&type=0&funid=a05031801&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1'],
     ARRAY['doit'],
     NOW(), NOW(), 'time',
-    'SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis, ''食品中毒人數'' AS y_axis, food_poisoning_people::float AS data FROM (SELECT year, food_poisoning_people FROM food_hygiene_work WHERE food_poisoning_people > 0 ORDER BY year DESC LIMIT 12) sub ORDER BY year',
+    'SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis, ''食品中毒人數'' AS y_axis, food_poisoning_people::float AS data FROM (SELECT year, food_poisoning_people FROM food_hygiene_work WHERE city = ''taipei'' AND food_poisoning_people > 0 ORDER BY year DESC LIMIT 12) sub ORDER BY year',
     NULL,
     'taipei'
+);
+
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'foodborne_illness_trend', NULL, NULL, NULL,
+    'static', NULL, 1, 'year',
+    '顯示臺北市歷年與新北市113年食品中毒人數，資料來源為年度食品衛生管理工作統計。',
+    '顯示雙北食品中毒人數。臺北市呈現最近12筆年度趨勢，新北市目前僅有113年（2024）1288人資料，以單點呈現。',
+    '臺北市政府主計處、新北市政府衛生局',
+    '可用於觀察雙北食品中毒人數趨勢，搭配其他食安組件判讀管理重點。',
+    ARRAY['https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=5900&kind=21&type=0&funid=a05031801&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'time',
+    'SELECT x_axis, y_axis, data FROM (
+  SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis,
+         ''臺北市食品中毒人數'' AS y_axis,
+         food_poisoning_people::float AS data,
+         year
+  FROM (SELECT year, food_poisoning_people FROM food_hygiene_work
+        WHERE city = ''taipei'' AND food_poisoning_people > 0
+        ORDER BY year DESC LIMIT 12) tp
+  UNION ALL
+  SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis,
+         ''新北市食品中毒人數'' AS y_axis,
+         food_poisoning_people::float AS data,
+         year
+  FROM food_hygiene_work
+  WHERE city = ''ntpc'' AND food_poisoning_people > 0
+) combined ORDER BY x_axis',
+    NULL,
+    'metrotaipei'
 );
 
 -- dashboard & group assignment
