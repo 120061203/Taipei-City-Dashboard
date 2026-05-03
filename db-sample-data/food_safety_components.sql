@@ -249,7 +249,7 @@ ALTER TABLE component_charts ADD COLUMN IF NOT EXISTS categories character varyi
 INSERT INTO component_charts (index, color, types, unit)
 VALUES (
     'market_quality_distribution',
-    ARRAY['#f97316'],
+    ARRAY['#22c55e'],
     ARRAY['DistrictChart','BarChart'],
     '家'
 )
@@ -259,7 +259,7 @@ ON CONFLICT (index) DO UPDATE
 INSERT INTO component_maps (index, title, type, source, paint, property)
 VALUES (
     'market_count_taipei', '臺北市優良市集分布', 'fill', 'geojson',
-    '{"fill-color": "#f97316", "fill-opacity": ["interpolate", ["linear"], ["get", "market_count"], 0, 0.05, 11, 0.85]}',
+    '{"fill-color": "#22c55e", "fill-opacity": ["interpolate", ["linear"], ["get", "market_count"], 0, 0.05, 11, 0.85]}',
     '[{"key": "market_count", "name": "優良市集數"}]'
 )
 ON CONFLICT DO NOTHING;
@@ -267,7 +267,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO component_maps (index, title, type, source, paint, property)
 VALUES (
     'market_count_metro', '雙北優良市集分布', 'fill', 'geojson',
-    '{"fill-color": "#f97316", "fill-opacity": ["interpolate", ["linear"], ["get", "market_count"], 0, 0.05, 11, 0.85]}',
+    '{"fill-color": "#22c55e", "fill-opacity": ["interpolate", ["linear"], ["get", "market_count"], 0, 0.05, 11, 0.85]}',
     '[{"key": "market_count", "name": "優良市集數"}]'
 )
 ON CONFLICT DO NOTHING;
