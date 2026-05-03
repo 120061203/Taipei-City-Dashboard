@@ -26,6 +26,9 @@ ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
 INSERT INTO components (index, name) VALUES ('inspection_enforcement_trend', '雙北食安執法工作量趨勢')
 ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
 
+INSERT INTO components (index, name) VALUES ('market_quality_distribution', '雙北優良市集星等分布')
+ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
+
 -- component_charts
 INSERT INTO component_charts (index, color, types, unit)
 VALUES (
@@ -241,6 +244,56 @@ INSERT INTO query_charts (
     'metrotaipei'
 );
 
+INSERT INTO component_charts (index, color, types, unit)
+VALUES (
+    'market_quality_distribution',
+    ARRAY['#5a9cf8','#f97316','#7ee787','#eac54f','#c084fc'],
+    ARRAY['ColumnChart'],
+    '家'
+)
+ON CONFLICT (index) DO UPDATE
+    SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
+
+DELETE FROM query_charts WHERE index = 'market_quality_distribution';
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'market_quality_distribution', NULL, NULL, NULL,
+    'static', NULL, 1, 'year',
+    '顯示臺北市最新年度優良市集各星等獲獎數量。',
+    '顯示臺北市優良市集評鑑各星等（1至5星）的獲獎數量，反映市集品質結構分布。',
+    '臺北市政府',
+    '可用於觀察臺北市優良市集品質等級分布。',
+    ARRAY['https://data.taipei/'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'two_d',
+    'SELECT grade::text || ''★'' AS x_axis, COUNT(*)::float AS data FROM market_quality_awards WHERE city = ''taipei'' AND year = (SELECT MAX(year) FROM market_quality_awards WHERE city = ''taipei'') GROUP BY grade ORDER BY grade',
+    NULL, 'taipei'
+);
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'market_quality_distribution', NULL, NULL, NULL,
+    'static', NULL, 1, 'year',
+    '顯示雙北113年優良市集各星等獲獎數量對比。',
+    '顯示臺北市與新北市113年（2024年）優良市集各星等（1至5星）獲獎數量。可比較雙北優良市集品質結構差異。',
+    '臺北市政府、經濟部商業發展署',
+    '比較雙北優良市集在不同星等的分布。',
+    ARRAY['https://data.taipei/'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'two_d',
+    'SELECT CASE WHEN city = ''taipei'' THEN ''臺北市'' ELSE ''新北市'' END || '' '' || grade || ''★'' AS x_axis, COUNT(*)::float AS data FROM market_quality_awards WHERE year = 2024 GROUP BY city, grade ORDER BY city DESC, grade',
+    NULL, 'metrotaipei'
+);
+
 DELETE FROM query_charts WHERE index = 'inspection_enforcement_trend';
 INSERT INTO query_charts (
     index, history_config, map_config_ids, map_filter,
@@ -305,6 +358,7 @@ BEGIN
             WHEN 'district_food_risk' THEN 3
             WHEN 'foodborne_illness_trend' THEN 4
             WHEN 'inspection_enforcement_trend' THEN 5
+            WHEN 'market_quality_distribution' THEN 6
             ELSE 99
         END) INTO comp_ids
     FROM components WHERE index IN (
@@ -312,7 +366,8 @@ BEGIN
         'food_grade_rank',
         'district_food_risk',
         'foodborne_illness_trend',
-        'inspection_enforcement_trend'
+        'inspection_enforcement_trend',
+        'market_quality_distribution'
     );
     INSERT INTO dashboards (index, name, components, icon, created_at, updated_at)
     VALUES ('food_safety_taipei', '食安守護', comp_ids, 'restaurant', NOW(), NOW())
