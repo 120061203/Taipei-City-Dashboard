@@ -23,6 +23,9 @@ ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
 INSERT INTO components (index, name) VALUES ('foodborne_illness_trend', '食品中毒事件趨勢')
 ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
 
+INSERT INTO components (index, name) VALUES ('inspection_enforcement_trend', '雙北食安執法工作量趨勢')
+ON CONFLICT (index) DO UPDATE SET name = EXCLUDED.name;
+
 -- component_charts
 INSERT INTO component_charts (index, color, types, unit)
 VALUES (
@@ -60,6 +63,16 @@ VALUES (
     ARRAY['#5a9cf8','#f97316'],
     ARRAY['TimelineSeparateChart'],
     '人'
+)
+ON CONFLICT (index) DO UPDATE
+    SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
+
+INSERT INTO component_charts (index, color, types, unit)
+VALUES (
+    'inspection_enforcement_trend',
+    ARRAY['#5a9cf8','#f97316'],
+    ARRAY['TimelineSeparateChart'],
+    '次'
 )
 ON CONFLICT (index) DO UPDATE
     SET color = EXCLUDED.color, types = EXCLUDED.types, unit = EXCLUDED.unit;
@@ -228,6 +241,60 @@ INSERT INTO query_charts (
     'metrotaipei'
 );
 
+DELETE FROM query_charts WHERE index = 'inspection_enforcement_trend';
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'inspection_enforcement_trend', NULL, NULL, NULL,
+    'static', NULL, 1, 'year',
+    '顯示臺北市歷年食安稽查次數趨勢。',
+    '顯示臺北市食品衛生稽查次數的年度趨勢，反映稽查執法的工作量變化。',
+    '臺北市政府主計處',
+    '可用於觀察台北食安稽查工作量年度變化。',
+    ARRAY['https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=5900&kind=21&type=0&funid=a05031801&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'time',
+    'SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis, ''臺北市稽查次數'' AS y_axis, inspection_visits::float AS data FROM food_hygiene_work WHERE city = ''taipei'' AND inspection_visits IS NOT NULL ORDER BY year',
+    NULL, 'taipei'
+);
+
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'inspection_enforcement_trend', NULL, NULL, NULL,
+    'static', NULL, 1, 'year',
+    '顯示雙北食安執法工作量趨勢，臺北為稽查次數、新北為取締攤販件數。',
+    '顯示雙北食安執法工作量年度趨勢。臺北市為食品衛生稽查次數，新北市為取締違規攤販件數（民國年轉換西元），兩者皆反映執法強度的年度變化，可用於跨城市對比。',
+    '臺北市政府主計處、新北市政府警察局',
+    '觀察雙北執法工作量的年度趨勢，判斷稽查力道是否與食安事件相關。',
+    ARRAY['https://tsis.dbas.gov.taipei/statis/webMain.aspx?sys=220&ymf=5900&kind=21&type=0&funid=a05031801&cycle=4&outmode=12&compmode=0&outkind=1&deflst=2&nzo=1','https://data.ntpc.gov.tw/datasets/c3ae074c-f65f-4f69-bf65-2c00a674e870'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'time',
+    'SELECT x_axis, y_axis, data FROM (
+  SELECT make_timestamptz(year, 7, 1, 0, 0, 0, ''UTC'') AS x_axis,
+         ''臺北市稽查次數'' AS y_axis,
+         inspection_visits::float AS data
+  FROM food_hygiene_work
+  WHERE city = ''taipei'' AND inspection_visits IS NOT NULL
+  UNION ALL
+  SELECT make_timestamptz(year::integer + 1911, 7, 1, 0, 0, 0, ''UTC'') AS x_axis,
+         ''新北市取締件數'' AS y_axis,
+         SUM(number)::float AS data
+  FROM vendor_enforcement_ntpc
+  WHERE district NOT LIKE ''%總%''
+  GROUP BY year
+) combined ORDER BY x_axis',
+    NULL, 'metrotaipei'
+);
+
 -- dashboard & group assignment
 DO $$
 DECLARE comp_ids INTEGER[]; dash_id INTEGER;
@@ -237,13 +304,15 @@ BEGIN
             WHEN 'food_grade_rank' THEN 2
             WHEN 'district_food_risk' THEN 3
             WHEN 'foodborne_illness_trend' THEN 4
+            WHEN 'inspection_enforcement_trend' THEN 5
             ELSE 99
         END) INTO comp_ids
     FROM components WHERE index IN (
         'food_inspection_failures',
         'food_grade_rank',
         'district_food_risk',
-        'foodborne_illness_trend'
+        'foodborne_illness_trend',
+        'inspection_enforcement_trend'
     );
     INSERT INTO dashboards (index, name, components, icon, created_at, updated_at)
     VALUES ('food_safety_taipei', '食安守護', comp_ids, 'restaurant', NOW(), NOW())
