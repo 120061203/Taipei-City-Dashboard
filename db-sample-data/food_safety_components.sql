@@ -131,6 +131,45 @@ INSERT INTO query_charts (
     'taipei'
 );
 
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'district_food_risk', NULL, ARRAY[1], NULL,
+    'static', NULL, 1, 'year',
+    '顯示雙北各行政區食安風險指數，台北以抽驗不合格件數、新北以稽查取締件數正規化為0–100。',
+    '顯示雙北各行政區食安風險指數。台北以食品抽驗不合格件數正規化（最高值=100），新北以稽查取締攤販件數正規化（最高值=100），兩城市均採0至100分量尺，數值越高代表相對食安壓力越大。',
+    '臺北市政府衛生局、新北市政府警察局',
+    '可用於比較雙北各行政區間的食品安全管理壓力。',
+    ARRAY['https://data.taipei/dataset/detail?id=09a917a0-0fb5-47e1-957c-5f1268fba517','https://data.ntpc.gov.tw/datasets/c3ae074c-f65f-4f69-bf65-2c00a674e870'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'two_d',
+    'WITH ntpc_raw AS (
+    SELECT district, SUM(number)::numeric AS total
+    FROM vendor_enforcement_ntpc
+    WHERE year = (SELECT MAX(year) FROM vendor_enforcement_ntpc)
+      AND district NOT LIKE ''%總%''
+    GROUP BY district
+),
+ntpc_max AS (SELECT MAX(total) AS m FROM ntpc_raw),
+ntpc_normalized AS (
+    SELECT district AS x_axis, ROUND(total / m * 100, 1)::float AS data
+    FROM ntpc_raw, ntpc_max
+),
+taipei AS (
+    SELECT x_axis, data FROM district_food_risk
+)
+SELECT x_axis, data FROM ntpc_normalized
+UNION ALL
+SELECT x_axis, data FROM taipei
+ORDER BY data DESC',
+    NULL,
+    'metrotaipei'
+);
+
 DELETE FROM query_charts WHERE index = 'foodborne_illness_trend';
 INSERT INTO query_charts (
     index, history_config, map_config_ids, map_filter,
