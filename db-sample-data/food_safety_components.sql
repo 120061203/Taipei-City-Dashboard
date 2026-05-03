@@ -191,6 +191,29 @@ INSERT INTO query_charts (
     'taipei'
 );
 
+-- district_food_risk taipei 地圖版（id=2 = 台北 12 行政區 GeoJSON）
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+) VALUES (
+    'district_food_risk', NULL, ARRAY[2], NULL,
+    'static', NULL, 1, 'year',
+    '顯示臺北市各行政區食安風險指數地圖。',
+    '以地圖色深呈現臺北市各行政區食安風險指數。',
+    '臺北市政府衛生局',
+    '觀察食安風險在各行政區的空間分布。',
+    ARRAY['https://data.taipei/dataset/detail?id=09a917a0-0fb5-47e1-957c-5f1268fba517'],
+    ARRAY['doit'],
+    NOW(), NOW(), 'two_d',
+    'SELECT x_axis, data FROM district_food_risk ORDER BY data DESC',
+    NULL,
+    'taipei'
+);
+
+-- district_food_risk metrotaipei 地圖版（id=1 = 雙北 41 行政區 GeoJSON）
 INSERT INTO query_charts (
     index, history_config, map_config_ids, map_filter,
     time_from, time_to, update_freq, update_freq_unit,
