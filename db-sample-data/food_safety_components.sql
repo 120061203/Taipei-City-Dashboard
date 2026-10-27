@@ -102,6 +102,21 @@ INSERT INTO query_charts (
     NULL,
     'taipei'
 );
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+)
+SELECT
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    NOW(), NOW(), query_type, query_chart, query_history, 'metrotaipei'
+FROM query_charts
+WHERE index = 'food_inspection_failures' AND city = 'taipei';
 
 -- food_inspection_failures metrotaipei（目前僅有臺北資料）
 INSERT INTO query_charts (
@@ -146,6 +161,21 @@ INSERT INTO query_charts (
     NULL,
     'taipei'
 );
+INSERT INTO query_charts (
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    created_at, updated_at, query_type, query_chart, query_history, city
+)
+SELECT
+    index, history_config, map_config_ids, map_filter,
+    time_from, time_to, update_freq, update_freq_unit,
+    short_desc, long_desc, source,
+    use_case, links, contributors,
+    NOW(), NOW(), query_type, query_chart, query_history, 'metrotaipei'
+FROM query_charts
+WHERE index = 'food_grade_rank' AND city = 'taipei';
 
 -- food_grade_rank metrotaipei（目前僅有臺北資料）
 INSERT INTO query_charts (
@@ -427,7 +457,8 @@ INSERT INTO query_charts (
          ''新北市取締件數'' AS y_axis,
          SUM(number)::float AS data
   FROM vendor_enforcement_ntpc
-  WHERE district NOT LIKE ''%總%''
+  WHERE kind = ''總計''
+    AND organ <> ''政府警察局''
   GROUP BY year
 ) combined ORDER BY x_axis',
     NULL, 'metrotaipei'

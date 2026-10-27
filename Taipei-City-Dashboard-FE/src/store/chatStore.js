@@ -7,6 +7,8 @@ const FOOD_SAFETY_COMPONENTS = new Set([
 	"food_grade_rank",
 	"foodborne_illness_trend",
 	"district_food_risk",
+	"inspection_enforcement_trend",
+	"market_quality_distribution",
 ]);
 
 const FOOD_SAFETY_KEYWORDS = [
@@ -22,12 +24,26 @@ const FOOD_SAFETY_KEYWORDS = [
 	"患者",
 	"風險",
 	"行政區",
+	"執法",
+	"稽查",
+	"取締",
+	"工作量",
+	"優良市集",
+	"市集",
 ];
 
 const FOOD_SAFETY_COMPONENT_MATCHERS = [
 	{
+		index: "inspection_enforcement_trend",
+		keywords: ["執法", "稽查", "取締", "工作量", "查次", "enforcement"],
+	},
+	{
+		index: "market_quality_distribution",
+		keywords: ["優良市集", "市集", "市場", "星等"],
+	},
+	{
 		index: "foodborne_illness_trend",
-		keywords: ["中毒", "病因", "患者", "案件", "事件", "趨勢"],
+		keywords: ["中毒", "病因", "患者", "案件", "事件"],
 	},
 	{
 		index: "food_grade_rank",
@@ -326,7 +342,7 @@ export const useChatStore = defineStore('chat', () => {
 						type: "function",
 						function: {
 							name: "get_food_safety_table_data",
-							description: "讀取食安守護四張圖目前資料，包含食品抽驗不合格、餐飲衛生分級、食品中毒趨勢、行政區食安風險。",
+							description: "讀取食安守護圖表目前資料，包含食品抽驗不合格、餐飲衛生分級、食品中毒趨勢、行政區食安風險、雙北食安執法工作量、雙北優良市集。",
 							parameters: {
 								type: "object",
 								properties: {
@@ -336,7 +352,7 @@ export const useChatStore = defineStore('chat', () => {
 									},
 									component_index: {
 										type: "string",
-										enum: ["", "food_inspection_failures", "food_grade_rank", "foodborne_illness_trend", "district_food_risk"],
+										enum: ["", "food_inspection_failures", "food_grade_rank", "foodborne_illness_trend", "district_food_risk", "inspection_enforcement_trend", "market_quality_distribution"],
 										description: "若向量搜尋已找到最相關圖表，填入圖表 index；不確定則留空。",
 									},
 								},
